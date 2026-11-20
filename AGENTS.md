@@ -1,22 +1,26 @@
 # AGENTS.md — Đảo Đèn Lồng
 
-Game 3D (Three.js, chạy trên trình duyệt) + chế độ headless (Node) theo Test Contract trong `docs/lab/` và lab board.
+Game 3D (Three.js, chạy trên trình duyệt) + chế độ headless (Node) theo **Test Contract v1.1** (Ticket-02, 3 Đêm). Spec + AC: `docs/notes/spec-phase-2.md`.
 
 ## Lệnh
 - Cài: `npm ci` · Build: `npm run build` (headless → `dist-headless/`, web → `dist/`)
 - Chạy game: `npm run dev` (dev) hoặc `npm run preview` (bản build)
 - Typecheck: `npm run typecheck` · Test: `npm test` · Kiểm chứng + bằng chứng: `npm run build:headless && npm run verify -- phase-N`
-- Headless: `node dist-headless/headless.mjs --seed <n> --night 1 [--scenario f] [--inputs f] --ticks <n> --out <f.jsonl> [--snapshot-every n]`
+- Headless: `node dist-headless/headless.mjs --seed <n> --night <1|2|3> [--scenario f] [--inputs f] --ticks <n> --out <f.jsonl> [--snapshot-every n]`
 
 ## Kiến trúc (bắt buộc giữ)
 - `src/core/` = luật chơi thuần, **không import three / DOM**. Chỉ RNG theo seed (`core/rng.ts`), không `Math.random()`, không thời gian thực → tất định.
 - `src/render/` chỉ đọc trạng thái core để vẽ. Thêm hiệu ứng/sáng tạo ở đây thì không được đổi output headless.
-- Mọi số gameplay đọc từ `game.contract.json` (`core/config.ts`). Đổi số → đổi ở file contract, không hard-code.
-- Thứ tự một bước: di chuyển → nhảy → nhặt → nạp đèn → tỏa sáng → Bóng Mực → bị chạm → sinh thêm → kết thúc.
+- Số chuẩn: có khóa tuning → `game.contract.json`; không có khóa → hằng trong `core/config.ts`. Bản đồ chuẩn 3 Đêm → `core/maps.ts`. Không hard-code số ở chỗ khác.
+- Thứ tự một tick (bắt buộc, Ticket-02): pause → bộ đếm → di chuyển Mây (nhảy, lướt, bục, gió) + rơi → nhặt đom đóm/bùa → nạp đèn → vùng an toàn → Tỏa Sáng → Bóng Mực + Gió Lạc → chạm (Gió Lạc trước, Bóng Mực theo id) → sinh theo lịch → thắng/thua → snapshot.
+- Khi đang pause: `tick` tăng, `sim_tick` và mọi bộ đếm đứng yên.
+- Tên trạng thái Bóng Mực đúng v1.1: spawning, wander, chase, recoil, stunned. Gió Lạc: idle, chase, flee, removed.
+- Màu các thành phần chuẩn lấy từ `render/palette.ts`.
 
 ## Quy tắc
 - Bám đúng chữ trong PRD/ticket/Test Contract; chỗ chưa quy định → ghi giả định vào `docs/notes/assumptions.md`, không tự bịa thành "yêu cầu".
 - Chỉ dùng lệnh chạy được trên macOS/Linux (không .bat/.ps1, không đường dẫn `\`). Tên file import đúng hoa/thường.
-- Yêu cầu mới → viết test/scenario trước, rồi code. Test cũ bị luật mới thay → sửa/bỏ kèm lý do trong ghi chú, không tắt âm thầm.
+- Yêu cầu mới → viết test (`tests/*.test.ts`) **và** ít nhất 1 scenario headless (`tests/scenarios/` + mục trong `scripts/verify.mjs`) trước, rồi code. Test cũ bị luật mới thay → sửa/bỏ kèm lý do trong ghi chú, không tắt âm thầm.
 - Không sửa tay output, không viết test luôn đạt. Xong việc phải chạy `npm test` + `npm run verify` và dẫn output làm bằng chứng.
 - Không commit `.env`, key, token.
+- Commit: dạng `feat(phase-N): …`, `fix(phase-N): …`, `test(phase-N): …`, `docs(phase-N): …`; không thêm dòng Co-Authored-By.

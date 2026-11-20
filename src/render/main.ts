@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { createWorld, step, World, InputState, GameEvent, timeLeft } from '../core/world';
 import { TUNING, DT, ISLAND_RADIUS } from '../core/config';
 import { Sfx } from './sfx';
+import { makeLanternModel, LanternModel } from './lantern';
 
 // ---------- Renderer / scene ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -74,28 +75,18 @@ const player = makePlayer();
 scene.add(player.g);
 
 // ---------- Đèn Lồng Lớn ----------
-interface LanternView { group: THREE.Group; lamp: THREE.Mesh; light: THREE.PointLight; bar: THREE.Mesh; flies: THREE.Mesh[] }
+interface LanternView { group: THREE.Group; model: LanternModel; bar: THREE.Mesh; flies: THREE.Mesh[] }
 const lanternViews = new Map<string, LanternView>();
-const unlitMat = new THREE.MeshStandardMaterial({ color: '#4a4560', emissive: '#000000' });
 function makeLantern(): LanternView {
-  const group = new THREE.Group();
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 3, 8), new THREE.MeshStandardMaterial({ color: '#3b2a1e' }));
-  post.position.y = 1.5;
-  post.castShadow = true;
-  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 12), unlitMat.clone());
-  lamp.scale.y = 1.25;
-  lamp.position.y = 3.4;
-  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.35, 12), new THREE.MeshStandardMaterial({ color: '#7a1f1f' }));
-  cap.position.y = 4.25;
-  const light = new THREE.PointLight('#ffae42', 0, 18, 1.4);
-  light.position.y = 3.4;
+  const model = makeLanternModel(TUNING.safe_radius);
+  const group = model.group;
   const ring = new THREE.Mesh(new THREE.RingGeometry(TUNING.safe_radius - 0.15, TUNING.safe_radius, 48), new THREE.MeshBasicMaterial({ color: '#ffb347', transparent: true, opacity: 0 }));
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.03;
   ring.name = 'safe';
   const bar = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.14), new THREE.MeshBasicMaterial({ color: '#ffc46b' }));
-  bar.position.y = 4.8;
-  group.add(post, lamp, cap, light, ring, bar);
+  bar.position.y = 4.9;
+  group.add(ring, bar);
   const flies: THREE.Mesh[] = [];
   for (let i = 0; i < 6; i++) {
     const f = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 4), new THREE.MeshBasicMaterial({ color: '#fff0a0' }));
@@ -104,7 +95,7 @@ function makeLantern(): LanternView {
     flies.push(f);
   }
   scene.add(group);
-  return { group, lamp, light, bar, flies };
+  return { group, model, bar, flies };
 }
 
 // ---------- Đom đóm & Bóng Mực ----------
@@ -274,25 +265,14 @@ function draw(t: number) {
   let litCount = 0;
   for (const l of world.lanterns) {
     const v = lanternViews.get(l.id)!;
-    const mat = v.lamp.material as THREE.MeshStandardMaterial;
     const frac = l.deposited / TUNING.lantern_cost;
+    v.model.update(frac, l.lit, t + l.pos[0]);
     v.bar.scale.x = Math.max(0.001, frac);
     v.bar.visible = !l.lit;
     v.bar.lookAt(camera.position.x, v.bar.getWorldPosition(tmp).y, camera.position.z);
     const ring = v.group.getObjectByName('safe') as THREE.Mesh;
     (ring.material as THREE.MeshBasicMaterial).opacity = l.lit ? 0.35 : 0;
-    if (l.lit) {
-      litCount++;
-      mat.color.set('#ffcf7a');
-      mat.emissive.set('#ff9a2e');
-      mat.emissiveIntensity = 1.4 + Math.sin(t * 3 + l.pos[0]) * 0.15;
-      v.light.intensity = 30;
-    } else {
-      mat.color.set('#4a4560');
-      mat.emissive.set('#ff9a2e');
-      mat.emissiveIntensity = frac * 0.5;
-      v.light.intensity = frac * 6;
-    }
+    if (l.lit) litCount++;
     // Sáng tạo (chỉ hiển thị): đom đóm bay quanh đèn đã thắp
     v.flies.forEach((f, i) => {
       f.visible = l.lit;

@@ -15,3 +15,13 @@
 - CI GitHub Actions trên Ubuntu + macOS.
 
 **Rủi ro cho phase sau:** contract có thể đổi (ví dụ thêm `--night 2`, dash, rơi khỏi đảo). Logic tách ở `src/core`, mỗi luật có test riêng nên dễ sửa; phải chạy lại toàn bộ scenario cũ.
+
+## Phase 2 — đánh giá nhanh
+
+**Đạt:** số chuẩn + thứ tự tick, bản đồ 3 Đêm, Lướt, Tạm dừng, Rơi, Gió Lạc, Bùa Gió, gió mạnh, contract v1.1 (snapshot/scenario/input/sự kiện). 53/53 test, 18/18 scenario headless, giống hệt giữa Windows và Linux. Regression Đêm 1 chạy lại với số chuẩn.
+
+**Có hỏng phase trước không:** luật Phase 1 bị Ticket-02 thay (điểm khi nạp thay vì khi nhặt, đèn cần 10, Bóng Mực sinh theo lịch…). Test Phase 1 đã sửa theo luật mới kèm lý do (assumptions.md Phase 2), không test nào bị tắt.
+
+**Chưa đạt / chưa kiểm:** FPS ≥ 30 ở 1280×720 chưa đo trên máy thật; âm thanh và cài đặt chưa kiểm bằng tai/mắt; bot chưa thắng Đêm 2–3; màn kết quả/Bình Minh chưa chơi tay tới cuối.
+
+**Chỉnh harness:** AGENTS.md thêm thứ tự 12 bước tick, tên trạng thái v1.1, vị trí số chuẩn/bản đồ, quy tắc ≥ 1 scenario/tính năng, quy ước commit. Skill verify-phase thêm bước đo FPS. Script verify nhận `--night` cho từng case.

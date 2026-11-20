@@ -39,3 +39,41 @@
 4. Đi theo `move` + `cam_yaw_deg` đúng công thức và đúng `player_speed`.
 5. Nhặt / nạp / thắp / tỏa sáng / bị chạm / thắng / thua phát đúng sự kiện và đúng điểm theo `tuning`.
 6. Game có giao diện: chơi được từ đầu đến thắng hoặc thua, có HUD, nhấn R chơi lại.
+
+
+## Phase 2 — Ticket-02 + Test Contract v1.1
+
+Ticket-02 thay toàn bộ số tự chọn của Phase 1 bằng số chuẩn (xem `docs/notes/spec-phase-2.md`). Các giả định A1–A17 ở trên bị thay như sau.
+
+### Giả định Phase 1 bị bỏ hoặc thay (kèm lý do)
+| Phase 1 | Phase 2 | Lý do |
+|---|---|---|
+| A1 vị trí đèn tính bằng công thức (L2 = 23.776, 7.725) | Đèn đúng tọa độ ticket (L2 = 23.8, 7.7) | Bản đồ chuẩn |
+| A2 không rơi khỏi đảo (`fall_enabled: false`) | Rơi được, có luật rơi | Ticket-02 |
+| A3 nhặt 1.5 m, mang 5, +10 khi **nhặt** | 1.0 m + chênh cao 1.5 m, mang 10, +10 khi **nạp** | Điểm chuẩn hóa |
+| A4 đèn cần 5, bán kính 3 m | 10, bán kính 2 m, bằng nhau chọn id nhỏ | Số chuẩn |
+| A5–A6 tỏa sáng tốn 1, 6 m, choáng 3 s, +20 | 3 đom đóm, 5 m (3D từ chân + 0.8), 120 tick, +5 | Số chuẩn |
+| A7 2 Bóng Mực lúc bắt đầu, thêm mỗi 45 s, luôn đuổi | Không có lúc bắt đầu; 2 con tại tick 300, rồi theo khoảng sinh; phát hiện 12 m / bỏ đuổi 18 m | Số chuẩn |
+| A9 bất tử 2 s, rơi đom đóm cách 3 m | 90 tick, rơi ra vành 1.5–2.5 m, TTL 480 | Số chuẩn |
+| A10 thắng xét ngay khi thắp đèn cuối | Xét sau mỗi tick theo thứ tự no_flames → all_lit → dawn | Thứ tự tick chuẩn |
+| A11 thưởng 1×giây + 50×lửa | 2×giây + 50×lửa | Số chuẩn |
+| A12 24 đom đóm, sinh mỗi 3 s | 20 ở 20 điểm sinh khác nhau, sinh tick 240k, trần 30 | Số chuẩn |
+
+Các test Phase 1 bị luật mới làm sai đã được **sửa theo luật mới** (không tắt): xem `tests/core.test.ts` (đầu file ghi rõ). Scenario `light-last-lantern` đổi `carried` 5 → 10 vì đèn cần 10. Bot thắng Đêm 1 cũ (seed 2026) không còn thắng với số chuẩn → thay bằng bot mới thắng seed 5.
+
+### Giả định mới cho chỗ Ticket-02 chưa nói
+| # | Chỗ chưa rõ | Giả định |
+|---|---|---|
+| B1 | Điểm xuất phát Đêm 2, Đêm 3 | Đêm 2: (0,0,0) tâm đảo A. Đêm 3: (0,0,−30) trên tầng 0 (tâm (0,0,0) nằm trong tháp chuông) — quay mặt +Z |
+| B2 | Thời gian ở trạng thái `spawning` | Đúng 1 tick (tick sinh ra); từ tick sau là wander/chase và mới chạm được ("thực thể mới chỉ tương tác được từ tick sau") |
+| B3 | Bóng Mực đi lại thế nào ở Đêm 2–3 | Bay lơ lửng tâm cao 1 m trên mặt đất bên dưới, không bị vách chặn, không bay ra khoảng không (biển mây) và không xuyên tháp; wander 1.5 m/s tới điểm sinh đom đóm ngẫu nhiên |
+| B4 | "Chênh cao" khi chạm Bóng Mực | Tâm Bóng Mực so với chân Mây ≤ 1.5 m |
+| B5 | "Điểm sương" sinh Gió Lạc | Dùng điểm sinh Bóng Mực của Đêm đó, chọn ngẫu nhiên theo seed |
+| B6 | Gió Lạc idle "lượn chậm" | Bay vòng tròn 2 m/s, cao 1.2 m, quay vào trong khi gần mép |
+| B7 | Gió Lạc ở trạng thái `removed` | Vẫn giữ trong mảng `drifters` với `state: "removed"` (không còn tương tác); không tính vào giới hạn 2 con |
+| B8 | Hướng gió | Góc nguyên 0–359° theo seed, `wind.dir_deg` = null khi không có gió; cơn gió đầu tại tick 1800 |
+| B9 | `player.invuln` trong snapshot | Boolean (còn bất tử hay không); các bộ đếm khác là giây (`*_s`) |
+| B10 | Bậc đi lên được (dốc) | Chênh ≤ 0.4 m mỗi bước đi được; cao hơn là vách |
+| B11 | Nạp đèn ở các tầng | XZ ≤ 2 m và chênh cao chân Mây – chân đèn ≤ 1.5 m |
+| B12 | Scenario `charms[]` | Nhận `id`, `pos`, `available`, `respawn_ticks`; scenario `motes[]` nhận thêm `kind` |
+| B13 | "Tăng tốc/dừng ≤ 0.1 s" | Vận tốc đổi tức thời (0 tick) — thỏa ≤ 0.1 s |

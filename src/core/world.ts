@@ -69,6 +69,8 @@ export interface World {
   nextShadeId: number;
   nextDrifterId: number;
   prevInput: InputState;
+  /** Cờ tắt luật cho cảnh benchmark (Ticket-04). Mặc định đều false → gameplay/headless không đổi. */
+  mode: { noSpawn: boolean; noDamage: boolean; noPickup: boolean; noFuelDecay: boolean; noEnd: boolean };
 }
 
 export const timeLeft = (w: World): number => w.startTimeLeft - w.simTick / C.TICK_RATE;
@@ -107,6 +109,7 @@ export function createWorld(seed: number, night = 1): World {
     wind: { active: false, dirDeg: 0, ticksLeft: 0, warn: false },
     nextMoteId: 1, nextShadeId: 1, nextDrifterId: 1,
     prevInput: neutralInput(),
+    mode: { noSpawn: false, noDamage: false, noPickup: false, noFuelDecay: false, noEnd: false },
   };
   // 20 đom đóm ban đầu tại 20 điểm khác nhau (chọn theo seed)
   const idx = map.motePoints.map((_, i) => i);
@@ -197,7 +200,7 @@ export function step(w: World, input: InputState): GameEvent[] {
   }
   // Ticket-03: trừ dầu đèn đang sáng (tự hao 1/giây + mỗi Bóng Mực đang hút 5/giây)
   for (const l of w.lanterns) {
-    if (!l.lit) continue;
+    if (!l.lit || w.mode.noFuelDecay) continue;
     l.fuelU -= C.FUEL_DECAY_U;
     for (const s of w.shades) {
       if (s.state !== 'drain' || s.targetLanternId !== l.id) continue;
@@ -222,7 +225,7 @@ export function step(w: World, input: InputState): GameEvent[] {
   movePlayer(w, input, pressed('jump'), pressed('dash'), ev);
 
   // 4. Nhặt đom đóm và bùa
-  if (p.respawnTicks === 0) {
+  if (p.respawnTicks === 0 && !w.mode.noPickup) {
     const cap = capacity(w);
     for (let i = 0; i < w.motes.length && p.carried < cap; ) {
       const m = w.motes[i];
@@ -327,7 +330,7 @@ export function step(w: World, input: InputState): GameEvent[] {
   for (const d of w.drifters) moveDrifter(w, d);
 
   // 9. Chạm: Gió Lạc cướp trước, rồi Bóng Mực (id tăng dần)
-  if (p.respawnTicks === 0) {
+  if (p.respawnTicks === 0 && !w.mode.noDamage) {
     for (const d of w.drifters) {
       if (d.state !== 'chase' || d.usedSteal) continue;
       if (distXZ(p.pos, d.pos) <= C.DRIFTER_TOUCH && Math.abs(d.pos[1] - C.DRIFTER_HOVER - p.pos[1]) <= C.PICKUP_HEIGHT) {
@@ -363,10 +366,11 @@ export function step(w: World, input: InputState): GameEvent[] {
   }
 
   // 10. Sinh theo lịch
-  spawnScheduled(w, ev);
+  if (!w.mode.noSpawn) spawnScheduled(w, ev);
 
   // 11. Thắng / thua
   // Ticket-03: không thắng sớm; bình minh: còn sống và số đèn sáng ≥ ceil(0.6 × tổng) → thắng
+  if (w.mode.noEnd) return ev;
   if (p.flames <= 0) finish(w, 'lost', 'no_flames', ev);
   else if (timeLeft(w) <= 1e-9) {
     const lit = w.lanterns.filter((l) => l.lit).length;
@@ -564,17 +568,17 @@ function moveShade(w: World, s: Shade) {
     moveShadeBy(w, s, dir[0] * stepLen, dir[1] * stepLen);
   } else {
     // wander: đi tới đèn sáng có fuel < 30 gần nhất (bằng nhau id nhỏ hơn); không có thì về đèn tắt gần nhất
-    const pick = (cands: Lantern[]) => {
-      let best: Lantern | null = null;
-      let bd = Infinity;
-      for (const l of cands) {
-        const d = distXZ(s.pos, l.pos);
-        if (d < bd - 1e-12) { best = l; bd = d; }
-      }
-      return best;
-    };
-    const weak = pick(w.lanterns.filter((l) => l.lit && l.fuelU < C.LOW_FUEL_U));
-    const target = weak ?? pick(w.lanterns.filter((l) => !l.lit));
+    // (không tạo mảng tạm: 200 Bóng Mực × 60 tick/giây trong benchmark)
+    let weak: Lantern | null = null;
+    let unlit: Lantern | null = null;
+    let wd = Infinity;
+    let ud = Infinity;
+    for (const l of w.lanterns) {
+      const d = distXZ(s.pos, l.pos);
+      if (l.lit && l.fuelU < C.LOW_FUEL_U) { if (d < wd - 1e-12) { weak = l; wd = d; } }
+      else if (!l.lit && d < ud - 1e-12) { unlit = l; ud = d; }
+    }
+    const target = weak ?? unlit;
     s.targetLanternId = target ? target.id : null;
     if (weak && distXZ(s.pos, weak.pos) <= C.DRAIN_RANGE) {
       s.state = 'drain';

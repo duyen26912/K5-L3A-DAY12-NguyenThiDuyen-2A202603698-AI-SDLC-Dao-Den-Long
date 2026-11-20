@@ -11,12 +11,15 @@
     "dev": "vite",
     "build": "npm run build:headless && npm run build:web",
     "build:web": "vite build",
-    "build:headless": "esbuild src/headless.ts --bundle --platform=node --format=esm --target=node18 --outfile=dist-headless/headless.mjs",
+    "build:headless": "esbuild headless=src/headless.ts soak=src/soak.ts leaderboard=src/leaderboard-store.ts --bundle --platform=node --format=esm --target=node18 --outdir=dist-headless --out-extension:.js=.mjs",
     "preview": "vite preview",
     "headless": "node dist-headless/headless.mjs",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "start": "node scripts/run.mjs",
+    "bench": "node scripts/bench.mjs",
+    "soak": "node --expose-gc --max-semi-space-size=1 --no-opt dist-headless/soak.mjs"
   },
   "dependencies": {
     "three": "^0.187.0"
@@ -25,6 +28,7 @@
     "@types/node": "^26.6.6",
     "@types/three": "^0.187.0",
     "esbuild": "^0.28.2",
+    "playwright": "^1.65.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.8"

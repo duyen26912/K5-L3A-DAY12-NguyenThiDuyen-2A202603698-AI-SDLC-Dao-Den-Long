@@ -1,8 +1,8 @@
 # Video demo — Đảo Đèn Lồng v1.0.0
 
-**Xem trên YouTube:** https://www.youtube.com/watch?v=5x32DwTSnd4
+**Xem trên YouTube:** https://www.youtube.com/watch?v=RZ1pihMqPAE
 
-[![Xem video demo trên YouTube](https://img.youtube.com/vi/5x32DwTSnd4/hqdefault.jpg)](https://www.youtube.com/watch?v=5x32DwTSnd4)
+[![Xem video demo trên YouTube](https://img.youtube.com/vi/RZ1pihMqPAE/hqdefault.jpg)](https://www.youtube.com/watch?v=RZ1pihMqPAE)
 
 Video do người làm bài tự quay (Ticket-04 mục 7: chơi trực tiếp một đoạn và cho thấy bằng chứng game chạy đúng).
 

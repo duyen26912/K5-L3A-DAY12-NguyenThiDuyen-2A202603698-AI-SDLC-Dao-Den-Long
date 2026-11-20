@@ -70,7 +70,7 @@ Lần đầu chạy trên Linux (Docker) với `node --expose-gc` thì **chưa �
 | 5. README, CHANGELOG 4 phase, CREDITS, LICENSE | — | [README](../../../README.md), [CHANGELOG](../../../CHANGELOG.md), [CREDITS](../../../CREDITS.md), [LICENSE](../../../LICENSE) | Đạt |
 | 6. Contract v1.3: `contract_version`, `bench_cmd`, `soak_cmd`; v1.0–v1.2 giữ nguyên | Test contract; 26/26 output headless giống hệt phase-3 | [headless-verify.md](headless-verify.md) | Đạt |
 | 7. Retro 1–2 trang | — | [retro.md](../../notes/retro.md) | Đạt |
-| 7. Video demo .mp4 < 5 phút | Người làm bài tự quay, tải lên YouTube (file gốc .mp4 > 100 MB nên không để trong repo) | [YouTube](https://www.youtube.com/watch?v=5x32DwTSnd4) | Đạt |
+| 7. Video demo .mp4 < 5 phút | Người làm bài tự quay, tải lên YouTube (file gốc .mp4 > 100 MB nên không để trong repo) | [YouTube](https://www.youtube.com/watch?v=RZ1pihMqPAE) | Đạt |
 
 ## Chưa đạt / ghi chú trung thực
 - Số bench là của máy mình; ngưỡng chính thức đo trên máy chấm. Chưa chạy bench trên macOS/Linux có màn hình.

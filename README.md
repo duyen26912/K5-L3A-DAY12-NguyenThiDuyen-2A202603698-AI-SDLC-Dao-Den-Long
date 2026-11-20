@@ -4,7 +4,7 @@
 > MSSV: 2A202603698 \
 > Tài liệu lab: [docs/lab/](docs/lab/README.md) \
 > **Bản phát hành:** [v1.0.0](https://github.com/duyen26912/K5-L3A-DAY12-NguyenThiDuyen-2A202603698-AI-SDLC-Dao-Den-Long/releases/tag/v1.0.0) \
-> **Video demo:** [YouTube — https://www.youtube.com/watch?v=5x32DwTSnd4](https://www.youtube.com/watch?v=5x32DwTSnd4)
+> **Video demo:** [YouTube — https://www.youtube.com/watch?v=RZ1pihMqPAE](https://www.youtube.com/watch?v=RZ1pihMqPAE)
 
 Game 3D góc nhìn thứ ba qua **3 Đêm**: Đảo Bến, Đảo Cau, Đảo Chuông. Bạn là **Mây**, người giữ đèn nhỏ tuổi, nhặt đom đóm, mang về thắp lại các **Đèn Lồng Lớn**, né **Bóng Mực** và **Gió Lạc** trong sương đen. Đèn hết dầu sẽ tắt — phải châm dầu và **giữ đủ đèn sáng tới bình minh** (≥ 60% số đèn) mới thắng Đêm; hết Ngọn Lửa là thua. Thắng cả 3 Đêm để thấy Bình Minh, rồi ghi tên lên **bảng xếp hạng**.
 
@@ -15,9 +15,9 @@ Game 3D góc nhìn thứ ba qua **3 Đêm**: Đảo Bến, Đảo Cau, Đảo Ch
 
 ## Video demo
 
-[![Xem video demo trên YouTube](https://img.youtube.com/vi/5x32DwTSnd4/hqdefault.jpg)](https://www.youtube.com/watch?v=5x32DwTSnd4)
+[![Xem video demo trên YouTube](https://img.youtube.com/vi/RZ1pihMqPAE/hqdefault.jpg)](https://www.youtube.com/watch?v=RZ1pihMqPAE)
 
-Bấm vào ảnh để xem trên YouTube: https://www.youtube.com/watch?v=5x32DwTSnd4 · trang riêng: [docs/demo/README.md](docs/demo/README.md)
+Bấm vào ảnh để xem trên YouTube: https://www.youtube.com/watch?v=RZ1pihMqPAE · trang riêng: [docs/demo/README.md](docs/demo/README.md)
 
 ## Yêu cầu hệ thống
 

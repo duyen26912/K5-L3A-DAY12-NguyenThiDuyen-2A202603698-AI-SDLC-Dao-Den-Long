@@ -47,3 +47,18 @@ Công cụ: **Claude Code** (desktop app, model Claude Opus 5.5). Harness: `AGEN
 - Ước tính **khoảng 2–3 triệu token đầu vào (phần lớn là cache ngữ cảnh) và khoảng 90–120 nghìn token đầu ra**. Ước tính thủ công, không đo bằng công cụ.
 - Tiết kiệm: logic trước, giao diện sau; một hàm `simulate()` dùng cho cả test và CLI; test chạy < 1 s; scenario file ngắn dùng chung một `p2-empty.scenario.json`.
 - Tốn thêm: nhiều lần chụp ảnh nhỏ để "đẩy" khung hình khi khung trình duyệt bị ẩn; thử đọc lab board trước khi biết phải đăng nhập.
+
+## Phase 3
+
+| Bước | Việc giao cho AI | AI sai gì / cách phát hiện | Xử lý |
+|---|---|---|---|
+| Đọc yêu cầu | Đọc Ticket-03 trên lab board | Trang bị phóng to trong khung trình duyệt nên nội dung bị cắt bên phải | Tải lại trang ở khung 900 px rồi đọc bằng ảnh phóng to; chép nguyên văn vào `docs/lab/TICKET-03.md` |
+| Thứ tự làm | — | Phase 2 chưa commit/tag; làm Phase 3 chồng lên sẽ không gắn được tag `phase-2` đúng | Hỏi người dùng → commit + tag + push Phase 2 trước, CI xanh, rồi mới làm Phase 3 |
+| Core | Dầu đèn (đơn vị nguyên 1/60), thắp lại, châm dầu, `drain`, luật thắng bình minh, sức chứa, điểm mới, IO v1.2 | — (66/66 test sau khi sửa test) | ADR-001 ghi lại mô hình trạng thái |
+| Test | Sửa 7 test bị luật mới thay (ghi `Phase 3:` tại chỗ), thêm 13 test Phase 3 | 4 test tự viết sai kỳ vọng: Bóng Mực cần hơn 30 tick để chạy tới; quên phần hút 5/60 trong cùng tick (44.9 chứ không phải 45); tick bình minh đặt sai | Sửa kỳ vọng theo đúng luật |
+| Bot | Bot giữ đèn sáng tới bình minh | Bot không thắng: 6 Bóng Mực hút dầu, bot châm dầu mãi một đèn | Ghi "chưa đạt" trong bằng chứng; ghi nhận khả năng mất cân bằng cho phase sau |
+| Giao diện | Thanh dầu, nhấp nháy, đèn tắt xẹp + rách, HUD sức chứa, chế độ mù màu | Vòng vùng an toàn vẫn vẽ khi dầu < 30 — phát hiện qua ảnh; vết rách đen khó thấy trên kính tối | Ẩn vòng khi dầu < 30; vết rách màu giấy sáng |
+
+### Token / chi phí Phase 3 (ước tính)
+- Khoảng **1–1,5 triệu token đầu vào (phần lớn cache) và 50–70 nghìn token đầu ra**; ước tính thủ công.
+- Tiết kiệm: sửa `world.ts` bằng một script thay chuỗi có kiểm tra (assert) thay vì viết lại cả file; dùng lại helper test và scenario rỗng `p2-empty`.

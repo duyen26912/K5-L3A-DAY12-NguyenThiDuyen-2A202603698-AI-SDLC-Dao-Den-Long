@@ -25,3 +25,13 @@
 **Chưa đạt / chưa kiểm:** FPS ≥ 30 ở 1280×720 chưa đo trên máy thật; âm thanh và cài đặt chưa kiểm bằng tai/mắt; bot chưa thắng Đêm 2–3; màn kết quả/Bình Minh chưa chơi tay tới cuối.
 
 **Chỉnh harness:** AGENTS.md thêm thứ tự 12 bước tick, tên trạng thái v1.1, vị trí số chuẩn/bản đồ, quy tắc ≥ 1 scenario/tính năng, quy ước commit. Skill verify-phase thêm bước đo FPS. Script verify nhận `--night` cho từng case.
+
+## Phase 3 — đánh giá nhanh
+
+**Đạt:** luật dầu đèn (hao, tắt, châm, thắp lại), vùng an toàn theo dầu, Bóng Mực `drain`, luật thắng bình minh + ngưỡng 60%, sức chứa tăng dần, bảng điểm mới, contract v1.2, chế độ mù màu, thanh dầu / nhấp nháy / đèn tắt xẹp + rách. 66/66 test, 26/26 scenario headless (gồm regression Phase 1–2), tất định.
+
+**Có hỏng phase trước không:** các luật bị Ticket-03 thay (thời lượng, điểm, thắng sớm, an toàn tuyệt đối) đã sửa test kèm ghi chú; các tính năng Phase 2 không bị thay (lướt, pause, rơi, Gió Lạc, Bùa, bản đồ) vẫn đạt nguyên test và scenario.
+
+**Chưa đạt / chưa kiểm:** bot chưa thắng được một Đêm với luật mới; chưa chơi tay một Đêm trọn vẹn để cảm nhận độ khó; chế độ mù màu chỉ kiểm qua mã + ảnh, chưa nhờ người mù màu thử.
+
+**Bài học:** chốt (commit + tag) phase trước khi nhận ticket mới — Phase 3 suýt phải làm chồng lên Phase 2 chưa commit. Luật thay đổi lớn nên viết ADR trước khi code: nhờ coi vùng an toàn là thuộc tính suy ra (`fuel ≥ 30`) mà một bước xử lý dùng chung cho "vừa thắp" và "vừa châm dầu".

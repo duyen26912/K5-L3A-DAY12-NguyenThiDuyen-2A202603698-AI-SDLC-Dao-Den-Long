@@ -77,3 +77,17 @@ Các test Phase 1 bị luật mới làm sai đã được **sửa theo luật m
 | B11 | Nạp đèn ở các tầng | XZ ≤ 2 m và chênh cao chân Mây – chân đèn ≤ 1.5 m |
 | B12 | Scenario `charms[]` | Nhận `id`, `pos`, `available`, `respawn_ticks`; scenario `motes[]` nhận thêm `kind` |
 | B13 | "Tăng tốc/dừng ≤ 0.1 s" | Vận tốc đổi tức thời (0 tick) — thỏa ≤ 0.1 s |
+
+## Phase 3 — Ticket-03 "Đèn cạn dầu" + Contract v1.2
+
+Quyết định thiết kế chính: `docs/notes/adr-001-den-can-dau.md`. Luật Phase 2 bị thay: xem `CHANGELOG.md` (breaking changes).
+
+| # | Chỗ chưa rõ | Giả định |
+|---|---|---|
+| C1 | "Đi về đèn tắt gần nhất như trước" khi không có đèn yếu | Bóng Mực `wander` đi tới đèn **chưa sáng** gần nhất và dừng cách 2 m; không còn đèn tắt nào thì lang thang ngẫu nhiên như Phase 2 |
+| C2 | Thời điểm thắp trong tick so với hao dầu | Thắp ở bước 5 sau bước 2 (trừ dầu), nên snapshot cùng tick có `fuel = 100`; hao bắt đầu từ tick sau |
+| C3 | Bóng Mực `drain` có gây sát thương khi chạm không | Không (đứng yên hút; Mây vào trong 6 m thì nó chuyển `chase` rồi mới chạm được) |
+| C4 | `fuel_drain` "mỗi 60 tick" | Đếm riêng cho từng Bóng Mực, tính từ lúc vào `drain` (tick hút thứ 60, 120…) |
+| C5 | Thanh tiến độ trên đèn | Đèn chưa sáng: số đom đóm đã nạp / cost (10 hoặc 5); đèn sáng: dầu / 100 |
+| C6 | "Đèn tắt bị xẹp 20%" áp dụng khi nào | Luôn áp dụng (không chỉ ở chế độ mù màu) cho đèn chưa sáng và chưa nạp gì; kèm vết rách sáng màu trên kính |
+| C7 | Thưởng bình minh `floor(fuel)` | Lấy dầu tại tick cuối, sau khi trừ dầu của tick đó |

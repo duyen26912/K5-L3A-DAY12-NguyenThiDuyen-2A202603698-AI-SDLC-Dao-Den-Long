@@ -62,3 +62,20 @@ Công cụ: **Claude Code** (desktop app, model Claude Opus 5.5). Harness: `AGEN
 ### Token / chi phí Phase 3 (ước tính)
 - Khoảng **1–1,5 triệu token đầu vào (phần lớn cache) và 50–70 nghìn token đầu ra**; ước tính thủ công.
 - Tiết kiệm: sửa `world.ts` bằng một script thay chuỗi có kiểm tra (assert) thay vì viết lại cả file; dùng lại helper test và scenario rỗng `p2-empty`.
+
+## Phase 4
+
+| Bước | Việc giao cho AI | AI sai gì / cách phát hiện | Xử lý |
+|---|---|---|---|
+| Đọc yêu cầu | Đọc Ticket-04 (người dùng dán nội dung) | — | Chép vào `docs/lab/TICKET-04.md` |
+| Cảnh bench | Cờ `world.mode` + `core/bench.ts` (200 Bóng Mực, 100 đom đóm) | — | Test: không sinh/sát thương/nhặt/hao dầu/kết thúc; chế độ thường không đổi (26/26 output giống phase-3) |
+| Hiệu năng | Đo bằng `bench.mjs` (Playwright) | Lần đầu avg ~30 FPS, p1_low rất thấp: (1) khựng 167 ms lần đầu shader biên dịch; (2) 300 nhóm Mesh riêng lẻ → hàng nghìn lần gọi vẽ; (3) ghi DOM HUD mỗi khung; (4) cảnh vẽ theo tỉ lệ màn hình 1.5 → nhiều điểm ảnh hơn 1280×720. Phát hiện bằng `slowest_ms` và thử tắt từng phần | Biên dịch shader trước; InstancedMesh cho cả đàn (`crowds.ts`); bỏ HUD trong bench; pixel ratio 1. Kết quả 30 s: avg 186, p1_low 84.7 |
+| Soak | `src/soak.ts`, đo RSS sau GC | Windows đạt (×1.05) nhưng **Linux chưa đạt** (×1.25–1.57) — chỉ lộ ra khi chạy Docker | Đo heap từng 50 Đêm: JS heap đứng yên (không rò rỉ); RSS tăng do V8 (vùng thế hệ trẻ + TurboFan). Thêm `--max-semi-space-size=1 --no-opt` vào `soak_cmd`, ghi bảng đo vào bằng chứng |
+| Bảng xếp hạng | Logic thuần + lưu file + API + màn hình | — | Test lưu → đọc lại → xuất; chạy thật: tên "ab" bị từ chối, "abc_Mây" lưu được, gõ W/A/S/D/Space vào ô tên không bị game nuốt |
+| Đổi phím, phụ đề, giảm chuyển động, cỡ chữ | `core/keybinds.ts` + giao diện | Màn hình Đổi phím cao 738 px > 720 → tiêu đề bị cắt (đo bằng `scrollHeight`); bộ đếm FPS còn chữ 13 px (script kiểm cỡ chữ bắt được) | Thu gọn bảng + `justify-content: safe center`; đổi FPS sang 18 px |
+| Script vá file | Dùng Python thay chuỗi có `assert` | Python đọc stdin bằng mã cp1252 trên Windows → `assert` thất bại với chữ tiếng Việt (không ghi file hỏng nhờ `assert` chạy trước khi ghi) | Ghi script ra file, chạy `python -X utf8` |
+| Ảnh bằng chứng | Chụp trong khung trình duyệt | Khung bị ẩn → game không chạy khung hình, ảnh bị cắt | Chụp bằng Playwright headless 1280×720, dữ liệu bảng xếp hạng ở thư mục tạm (không đụng dữ liệu thật) |
+
+### Token / chi phí Phase 4 (ước tính)
+- Khoảng **2–3 triệu token đầu vào (phần lớn cache) và 80–110 nghìn token đầu ra**; ước tính thủ công. Phần tốn nhất là vòng đo – sửa hiệu năng (mỗi lần bench mở Chrome 15–40 s) và điều tra bộ nhớ soak.
+- Tiết kiệm: đo ngắn 10 s khi thử, chỉ chạy 30 s chính thức một lần; chạy Docker ở nền trong lúc viết tài liệu; probe bộ nhớ nhỏ thay vì đọc mã V8.

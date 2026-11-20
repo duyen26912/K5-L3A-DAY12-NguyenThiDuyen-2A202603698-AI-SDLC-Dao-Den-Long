@@ -1,0 +1,32 @@
+{
+  "entries": [
+    {
+      "name": "Mây_7",
+      "score": 1840,
+      "nights_won": 3,
+      "achieved_at": "2026-11-20T22:52:53+07:00",
+      "seed": 7
+    },
+    {
+      "name": "Ông_Đăng",
+      "score": 655,
+      "nights_won": 1,
+      "achieved_at": "2026-11-20T22:52:54+07:00",
+      "seed": 7
+    },
+    {
+      "name": "player_2",
+      "score": 655,
+      "nights_won": 1,
+      "achieved_at": "2026-11-20T22:52:55+07:00",
+      "seed": 7
+    },
+    {
+      "name": "Duyên_01",
+      "score": 0,
+      "nights_won": 0,
+      "achieved_at": "2026-11-20T22:52:53+07:00",
+      "seed": 7
+    }
+  ]
+}

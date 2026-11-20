@@ -91,3 +91,27 @@ Quyết định thiết kế chính: `docs/notes/adr-001-den-can-dau.md`. Luật
 | C5 | Thanh tiến độ trên đèn | Đèn chưa sáng: số đom đóm đã nạp / cost (10 hoặc 5); đèn sáng: dầu / 100 |
 | C6 | "Đèn tắt bị xẹp 20%" áp dụng khi nào | Luôn áp dụng (không chỉ ở chế độ mù màu) cho đèn chưa sáng và chưa nạp gì; kèm vết rách sáng màu trên kính |
 | C7 | Thưởng bình minh `floor(fuel)` | Lấy dầu tại tick cuối, sau khi trừ dầu của tick đó |
+
+## Phase 4 — Ticket-04 "Bình minh: phát hành v1.0.0" + Contract v1.3
+
+Luật chơi không đổi (đầu ra headless giống hệt phase-3, xem `docs/proof/phase-4/headless-verify.md`).
+
+| # | Chỗ chưa rõ | Giả định |
+|---|---|---|
+| D1 | `score` lưu bảng xếp hạng là "tổng điểm các Đêm đã thắng" của lượt nào | Một **lượt** bắt đầu khi bấm "Bắt đầu" hoặc chọn Đêm ở menu; cộng điểm các Đêm thắng trong lượt. Thua rồi "Chơi lại Đêm" vẫn cùng lượt. Mỗi màn kết quả chỉ lưu được một lần |
+| D2 | `seed` của mục bảng xếp hạng | Seed của Đêm đầu tiên trong lượt (mỗi Đêm có seed riêng; `?seed=` cố định thì mọi Đêm cùng seed) |
+| D3 | "Lưu trên đĩa cục bộ" với bản web | Server Node (`npm start` = `node scripts/run.mjs`, hoặc `npm run dev`) ghi `~/.dao-den-long/leaderboard.json` (đổi được bằng `DDL_DATA_DIR`); `--export-leaderboard` đọc đúng file này. Nếu mở `dist/` từ host tĩnh không có API thì lưu `localStorage` của trình duyệt (vẫn còn sau khi tắt) |
+| D4 | Tên tiếng Việt | Chuẩn hóa NFC rồi đếm 3–12 ký tự; chấp nhận chữ Unicode (`\p{L}`), số, `_` |
+| D5 | "Bằng điểm thì ai đạt trước đứng trên" | So `achieved_at` theo thời điểm thật (đã quy đổi múi giờ); trùng hẳn thì mục có trước trong file đứng trên |
+| D6 | Cửa sổ 1280×720 và độ phân giải vẽ | Viewport trình duyệt 1280×720 và **pixel ratio 1** (vẽ đúng 1280×720 điểm ảnh, không phụ thuộc tỉ lệ màn hình của máy chấm) |
+| D7 | Tắt vsync với bản web | Chromium chạy với `--disable-gpu-vsync --disable-frame-rate-limit` (Playwright), kèm cờ tắt giới hạn khi cửa sổ ở nền; ghi `vsync_off: true`. Trên Linux không có màn hình thì chạy headless (ghi rõ trong `renderer`) |
+| D8 | `peak_mem_mb` bản web | `null`: trang web không đọc được RSS của tiến trình trình duyệt. Ghi thêm `js_heap_peak_mb` (JS heap đỉnh của trang, Chromium) để tham khảo |
+| D9 | `load_ms` "từ lúc tiến trình bắt đầu" | Từ lúc tiến trình `node scripts/bench.mjs` bắt đầu (gồm mở server + khởi động Chromium + tải trang) tới khung hình đầu tiên của cảnh bench |
+| D10 | "Rải đều trên đảo" (bench) | 200 Bóng Mực và 100 đom đóm rải đều theo diện tích trong bán kính 38 m (đảo 40 m), dùng RNG của world theo seed; Bóng Mực ở độ cao lơ lửng chuẩn |
+| D11 | Hiệu ứng sáng tạo trong bench | Tắt trang trí (cây, bụi, cầu…), HUD, menu; Bóng Mực và đom đóm vẽ hàng loạt (InstancedMesh) cùng hình dáng như khi chơi. Mây đứng yên ở (0,0,0) |
+| D12 | Soak: input ngẫu nhiên "theo seed" | RNG input riêng cho từng Đêm, khởi tạo từ seed của Đêm đó; mỗi 30 tick chọn hướng ngẫu nhiên đều theo góc; các xác suất theo đúng ticket |
+| D13 | Soak: đo RSS | Gọi GC (`--expose-gc`) trước khi đo; `mem_start_mb` ngay sau khi tạo xong Đêm 1, `mem_end_mb` sau khi bỏ Đêm cuối + GC. `soak_cmd` chạy Node với `--max-semi-space-size=1 --no-opt`: đo trên Linux (Docker `node:20`), JS heap đang dùng đứng yên ~3,5 MB qua 400 Đêm (không rò rỉ), nhưng RSS mặc định vẫn tăng 40 → 75 MB vì V8 nới vùng nhớ thế hệ trẻ khi cấp phát nhiều và giữ bộ nhớ của trình biên dịch tối ưu TurboFan (glibc không trả lại). Hai cờ này giữ RSS phẳng (40,8 → 43,8 MB sau 400 Đêm; ×1,04 với 10 Đêm). Bảng đo: `docs/proof/phase-4/README.md` |
+| D14 | "Rung camera" | Game không có rung camera. "Giảm chuyển động" tắt: viền đỏ chớp khi trúng đòn, lóe sáng khi nhặt đom đóm, chữ đồng hồ nhấp nháy, thanh dầu nhấp nháy. Ngọn lửa trong đèn yếu vẫn nhấp nháy chậm 1 Hz (chỉ báo bắt buộc của Ticket-03, không phải chớp màn hình) |
+| D15 | Phụ đề / chỉ báo | Mỗi dòng hiện 4 s (đèn yếu 5 s), tối đa 4 dòng. Bóng Mực xuất hiện: mũi tên đỏ 4 s — ở mép màn hình nếu nó ngoài khung nhìn, phía trên nó nếu đang thấy. "10 giây cuối": một lần mỗi Đêm. Đèn yếu: mỗi lần một đèn sáng tụt dưới 30. Bật mặc định, tắt được trong Cài đặt |
+| D16 | Đổi phím | Mỗi hành động 2 ô (chính + phụ). Trùng với hành động khác → báo và **không gán**. F3, H, Enter, Tab dành cho giao diện. Xoay camera bằng chuột không nằm trong danh sách hành động của ticket nên không đổi |
+| D17 | "Cỡ chữ tối thiểu 18 px" | Mọi chữ giao diện ≥ 18 px CSS ở 1280×720 (đã kiểm bằng script đọc `getComputedStyle`); "Chữ lớn" nhân mọi cỡ chữ ×1.25 |

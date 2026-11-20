@@ -1,0 +1,71 @@
+{
+  "contract_version": "1.3",
+  "avg_fps": 186.32,
+  "p1_low_fps": 84.73,
+  "frame_ms_p95": 9.2,
+  "frames": 5590,
+  "load_ms": 1181,
+  "peak_mem_mb": null,
+  "js_heap_peak_mb": 19.24,
+  "vsync_off": true,
+  "renderer": "three.js r187 WebGL2 (ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001638) Direct3D11 vs_5_0 ps_5_0, D3D11)); chromium 158.0.8127.37",
+  "os": "Windows_NT 10.0.19045 x64; CPU AMD Ryzen 5 5600H with Radeon Graphics         ; RAM 15 GB",
+  "scene": {
+    "seed": 42,
+    "duration_s": 30,
+    "warmup_s": 3,
+    "window": "1280x720",
+    "shades": 200,
+    "motes": 100
+  },
+  "slowest_ms": [
+    [
+      23,
+      2784
+    ],
+    [
+      22.8,
+      2847
+    ],
+    [
+      14.4,
+      97
+    ],
+    [
+      14.4,
+      430
+    ],
+    [
+      14,
+      1365
+    ],
+    [
+      13.6,
+      174
+    ],
+    [
+      13.6,
+      228
+    ],
+    [
+      13.5,
+      1566
+    ],
+    [
+      13.5,
+      2495
+    ],
+    [
+      13.2,
+      59
+    ],
+    [
+      13.2,
+      1107
+    ],
+    [
+      13.2,
+      2352
+    ]
+  ]
+}

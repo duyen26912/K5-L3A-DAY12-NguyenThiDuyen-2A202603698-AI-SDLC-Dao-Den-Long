@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.0.0 / phase-4 — Ticket-04 "Bình minh: phát hành v1.0.0", Test Contract v1.3
+
+Luật chơi **không đổi**: đầu ra headless của 26 scenario Phase 1–3 giống hệt từng byte so với tag `phase-3`.
+
+### Thay đổi contract (v1.2 → v1.3)
+| Trước (v1.2) | Sau (v1.3) |
+|---|---|
+| `contract_version: "1.2"` | `"1.3"` |
+| `run_cmd`: `npm run preview -- --open` | `node scripts/run.mjs` (server Node: bản web `dist/` + API bảng xếp hạng; `--export-leaderboard out.json`) |
+| — | `bench_cmd`: `node scripts/bench.mjs` (`--seed --duration --out` → `bench.json`) |
+| — | `soak_cmd`: `node --expose-gc --max-semi-space-size=1 --no-opt dist-headless/soak.mjs` (`--seed --nights --out` → `soak.json`) |
+| Cài đặt: `npm ci && npm run build` rồi `npm run preview -- --open` | `npm ci && npm run build` rồi `npm start` |
+
+### Thêm
+- **Benchmark** (Playwright + Chromium, cửa sổ 1280×720, tắt vsync): cảnh chuẩn 200 Bóng Mực + 100 đom đóm (`src/core/bench.ts`), camera bay vòng, 3 s khởi động, đo avg/p1_low/p95/load. Bóng Mực và đom đóm vẽ hàng loạt bằng InstancedMesh (`src/render/crowds.ts`), biên dịch shader trước khi đo.
+- **Soak test** 10 Đêm trong một tiến trình (`src/soak.ts`), input ngẫu nhiên theo seed.
+- **Bảng xếp hạng** top 10 lưu trên đĩa (`src/core/leaderboard.ts`, `src/leaderboard-store.ts`): nhập tên sau Bình Minh hoặc khi thua (hỗ trợ tiếng Việt có dấu), màn hình Bảng xếp hạng ở menu, lệnh xuất JSON.
+- **Dễ tiếp cận:** đổi phím mọi hành động (2 phím/hành động, báo trùng, khôi phục mặc định, lưu); phụ đề + mũi tên chỉ Bóng Mực, cảnh báo gió, 10 giây cuối, đèn dầu < 30; giảm chuyển động; mọi chữ ≥ 18 px, tùy chọn chữ lớn ×1.25.
+- Giao diện (chỉ hiển thị): menu chính 3 phần (cách chơi + nút bắt đầu · tên game + đèn lồng · Mây 3D); nút Lướt/Tỏa sáng tròn với hồi chiêu quét + đếm giây; bản đồ nhỏ (đảo, đèn, đom đóm, Bóng Mực, hướng nhìn); cụm đá có rêu trên cả 3 Đêm; màn Cài đặt đóng khung với công tắc gạt; màn Bình Minh có trời sáng dần, mặt trời, đèn trời bay và bảng điểm từng Đêm.
+- Scenario `p4-stress` (Đêm 3 trọn 300 s, 60 Bóng Mực); `verify -- phase-4` so đầu ra với phase-3, chạy `soak_cmd` và lệnh xuất bảng xếp hạng. 83 test.
+- README đầy đủ (yêu cầu hệ thống, 3 lệnh cài, bench/soak), retro 4 phase, bản web chạy được đính kèm Release v1.0.0.
+
+### Sửa
+- Bỏ cấp phát mảng mỗi tick trong logic chọn đèn của Bóng Mực `wander` (cùng kết quả, ít rác hơn).
+- Cảnh bench vẽ ở pixel ratio 1 (trước đó nhân theo tỉ lệ màn hình → vẽ nhiều điểm ảnh hơn 1280×720).
+
 ## phase-3 — Ticket-03 "Đèn cạn dầu", Test Contract v1.2
 
 ### ⚠ Breaking changes (phá vỡ tương thích với Phase 2)

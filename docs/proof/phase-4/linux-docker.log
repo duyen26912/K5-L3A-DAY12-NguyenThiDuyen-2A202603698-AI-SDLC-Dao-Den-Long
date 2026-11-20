@@ -1,0 +1,77 @@
+# Kiểm chứng Phase 4 trên Linux bằng Docker (image node:20), từ mã nguồn hiện tại
+
+== Linux 6.18.40.1-microsoft-standard-WSL2 x86_64, Node v20.20.2
+✓ built in 280ms
+== npm test
+# tests 83
+# pass 83
+# fail 0
+== node scripts/verify.mjs linux-check
+PASS  p1-contract-example  (end: state=playing, ticks=300, score=0; tất định=true; 40 ms)
+PASS  p1-light-last-lantern  (end: state=playing, ticks=600, score=150; tất định=true; 35 ms)
+PASS  p1-dawn  (end: state=lost, ticks=120, score=0; tất định=true; 33 ms)
+PASS  p2-dash  (end: state=playing, ticks=120, score=0; tất định=true; 43 ms)
+PASS  p2-pause  (end: state=playing, ticks=240, score=0; tất định=true; 32 ms)
+PASS  p2-fall  (end: state=playing, ticks=200, score=0; tất định=true; 41 ms)
+PASS  p2-n2-bridge  (end: state=playing, ticks=600, score=0; tất định=true; 37 ms)
+PASS  p2-n2-pad  (end: state=playing, ticks=150, score=0; tất định=true; 36 ms)
+PASS  p2-n3-ramp  (end: state=playing, ticks=100, score=0; tất định=true; 31 ms)
+PASS  p2-n3-pad  (end: state=playing, ticks=120, score=0; tất định=true; 31 ms)
+PASS  p2-n3-wind  (end: state=playing, ticks=2160, score=0; tất định=true; 50 ms)
+PASS  p2-drifter-steal  (end: state=playing, ticks=400, score=0; tất định=true; 36 ms)
+PASS  p2-drifter-drop  (end: state=playing, ticks=130, score=0; tất định=true; 34 ms)
+PASS  p2-charm  (end: state=playing, ticks=120, score=0; tất định=true; 34 ms)
+PASS  p2-safe-evict  (end: state=playing, ticks=40, score=150; tất định=true; 31 ms)
+PASS  p2-n2-random-full  (end: state=lost, ticks=16200, score=0; tất định=true; 151 ms)
+PASS  p2-n3-random-full  (end: state=lost, ticks=14578, score=0; tất định=true; 183 ms)
+PASS  p3-fuel-out  (end: state=playing, ticks=90, score=0; tất định=true; 30 ms)
+PASS  p3-refuel  (end: state=playing, ticks=5, score=30; tất định=true; 27 ms)
+PASS  p3-relight  (end: state=playing, ticks=5, score=65; tất định=true; 27 ms)
+PASS  p3-drain  (end: state=playing, ticks=400, score=0; tất định=true; 34 ms)
+PASS  p3-drain-pulse  (end: state=playing, ticks=5, score=15; tất định=true; 30 ms)
+PASS  p3-no-early-win  (end: state=playing, ticks=120, score=150; tất định=true; 30 ms)
+PASS  p3-dawn-win  (end: state=won, ticks=120, score=594; tất định=true; 30 ms)
+PASS  p3-dawn-lose  (end: state=lost, ticks=120, score=0; tất định=true; 31 ms)
+PASS  p3-capacity  (end: state=playing, ticks=2, score=0; tất định=true; 28 ms)
+PASS  p4-stress  (end: state=lost, ticks=18000, score=0; tất định=true; 578 ms)
+Headless so với phase-3: 26/26 file giống hệt
+PASS  soak  (crashes=0, mem 41.4 → 43.1 MB (×1.041), results=lost,lost,lost,lost,lost,lost,lost,lost,lost,lost)
+PASS  export-leaderboard  (entries: An_1, Bảo_2, Chi_3)
+exit 0
+== soak_cmd (đúng lệnh trong game.contract.json) x3
+{"nights":10,"crashes":0,"results":["lost","lost","lost","lost","lost","lost","lost","lost","lost","lost"],"mem_start_mb":41.4,"mem_end_mb":43.1,"duration_s":0.4}
+{"nights":10,"crashes":0,"results":["lost","lost","lost","lost","lost","lost","lost","lost","lost","lost"],"mem_start_mb":41.4,"mem_end_mb":43.1,"duration_s":0.4}
+{"nights":10,"crashes":0,"results":["lost","lost","lost","lost","lost","lost","lost","lost","lost","lost"],"mem_start_mb":41.4,"mem_end_mb":43.1,"duration_s":0.4}
+== run_cmd --export-leaderboard (thư mục dữ liệu trống)
+Đã xuất bảng xếp hạng ra /tmp/out.json (nguồn: /tmp/lb/leaderboard.json)
+{
+  "entries": []
+}
+== sha256 output headless (so với Windows)
+a44eae0d526e4fa0fedb059dcf6660110bbeeedebbe4867be689f437088d3569  p1-contract-example.jsonl
+fefdc795c99e96fcc5213c9bd785f349e3a468881ec3ca921be0ff6845d5be27  p1-dawn.jsonl
+bc49838713d947baad5bd6df28b256a62b5634ebd9b2087ce67bc2ea81152a76  p1-light-last-lantern.jsonl
+3e27bf00e8c35f803918333745740936bcd8288ffeffe4da4093fb2674d20298  p2-charm.jsonl
+4abcec5bf7a706de9c71c3071ff4852bb863a81c41d9f7e7f525cbd1d0a3a400  p2-dash.jsonl
+13453fbc8ba5f0e9d9be164230ec0f8c90829c139ca3e333949aa43523a6756d  p2-drifter-drop.jsonl
+ba6b005d8d1109bc24fa6b91d7fb5f634fe6c2c2647957475efc73279ec56069  p2-drifter-steal.jsonl
+9f782d3065e33786134b06b1e18eedd772478c5467e19a68432d86c326c0876d  p2-fall.jsonl
+c4414b0be830077163a090865bc44293261406f451c2fd6598cb8bcd8156054b  p2-n2-bridge.jsonl
+7f0f1e618cbce705ef1c36cbbaf8af9f97c74cbb1cb9286bbb8060ff950c668d  p2-n2-pad.jsonl
+28090fe85204dd6ddb052b51a7b232c824304acd174492bf17cde38960a8ab67  p2-n2-random-full.jsonl
+35fd3e544faa0b41c1edd91611137049e14d32f24429b5ea61a2b11f02baf8db  p2-n3-pad.jsonl
+7236d28a1e9bb3d7d5165629a21c6c6ec3f5af486fce6dcf9a3081c2982f9692  p2-n3-ramp.jsonl
+a90ec5d58f79a8ddb46a02797d32d927c1e91ac63cb525bc28c15a3aa94d8866  p2-n3-random-full.jsonl
+3e3e41b0890d6e108a3585f22d3889ddffc98dfe555640d7b056b04c12db8881  p2-n3-wind.jsonl
+20d69c1efc411c14a34a7f05d531c2fc0c387ecb93071f8af2ba8bd307d058d9  p2-pause.jsonl
+54d1a01038e2f5721a79890ad2f0a87742ca33a3feb765a0aef91b71839cfe34  p2-safe-evict.jsonl
+336f7e78f68bf09757570f6950914616aadb45d47d2c5adabdccf605f631daed  p3-capacity.jsonl
+5237d662f57c52157c5acebb7232a2faaf57fd06107d43f3c0a068cc71168522  p3-dawn-lose.jsonl
+e5c76f6050ca77c556ec9e6d4d8df5152245224c3520ee131cccb0b3c7086cae  p3-dawn-win.jsonl
+0548fda2e4e416566ea07b7c013c74e0a9404f5e02792cec62991ea4ffef52b3  p3-drain-pulse.jsonl
+68dc6622aeb7b8bdcf79a10dfaae43f64beeb0bcd01eb7a12a45c65ce8783e6a  p3-drain.jsonl
+7441c2fc50914bdff915ce8bdcc5076b4e6b7ed510c81712ed1c5f25fbc0764b  p3-fuel-out.jsonl
+9ed47129977bbc79f643c4576865a7645e01eeca5a7a7d56459ee055821940bd  p3-no-early-win.jsonl
+ce3cb37b272b8e730d19fe1f94794090398cf745066679856e975b8a6bb6a065  p3-refuel.jsonl
+2f58079667099e9455c60ef445a7300f6b4dbffbc76fc935762e299041a5fde6  p3-relight.jsonl
+60cdf68a86450bc712227c98ecd183b497dfb349484ad27e2ea6fe67380bec05  p4-stress.jsonl

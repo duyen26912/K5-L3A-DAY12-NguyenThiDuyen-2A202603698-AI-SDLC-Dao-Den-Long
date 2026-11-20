@@ -4,7 +4,7 @@
 > MSSV: 2A202603698 \
 > Tài liệu lab: [docs/lab/](docs/lab/README.md) \
 > **Bản phát hành:** [v1.0.0](https://github.com/duyen26912/K5-L3A-DAY12-NguyenThiDuyen-2A202603698-AI-SDLC-Dao-Den-Long/releases/tag/v1.0.0) \
-> **Video demo:** đính kèm Release v1.0.0 (`demo.mp4`)
+> **Video demo:** [YouTube — https://www.youtube.com/watch?v=5x32DwTSnd4](https://www.youtube.com/watch?v=5x32DwTSnd4)
 
 Game 3D góc nhìn thứ ba qua **3 Đêm**: Đảo Bến, Đảo Cau, Đảo Chuông. Bạn là **Mây**, người giữ đèn nhỏ tuổi, nhặt đom đóm, mang về thắp lại các **Đèn Lồng Lớn**, né **Bóng Mực** và **Gió Lạc** trong sương đen. Đèn hết dầu sẽ tắt — phải châm dầu và **giữ đủ đèn sáng tới bình minh** (≥ 60% số đèn) mới thắng Đêm; hết Ngọn Lửa là thua. Thắng cả 3 Đêm để thấy Bình Minh, rồi ghi tên lên **bảng xếp hạng**.
 
@@ -12,6 +12,12 @@ Game 3D góc nhìn thứ ba qua **3 Đêm**: Đảo Bến, Đảo Cau, Đảo Ch
 
 
 **Stack:** TypeScript · [Three.js](https://threejs.org) r187 (WebGL2, chạy trên trình duyệt) · Node.js cho build, server, headless, soak · Playwright cho benchmark.
+
+## Video demo
+
+[![Xem video demo trên YouTube](https://img.youtube.com/vi/5x32DwTSnd4/hqdefault.jpg)](https://www.youtube.com/watch?v=5x32DwTSnd4)
+
+Bấm vào ảnh để xem trên YouTube: https://www.youtube.com/watch?v=5x32DwTSnd4 · trang riêng: [docs/demo/README.md](docs/demo/README.md)
 
 ## Yêu cầu hệ thống
 
@@ -95,7 +101,7 @@ node scripts/run.mjs --export-leaderboard out.json
 - Đêm 1 / 2 / 3 dài **240 / 270 / 300 s**. **Thắng** khi còn sống tới bình minh và có ≥ 3/5, 4/6, 5/7 đèn đang sáng.
 - **Điểm:** +5 mỗi đom đóm nạp/châm, +100 thắp lần đầu, +40 thắp lại, Tỏa Sáng +5 mỗi Bóng Mực (+15 nếu nó đang hút dầu); bình minh (khi thắng): +50 + dầu còn lại mỗi đèn sáng, +50 mỗi Ngọn Lửa.
 
-Số có khóa tuning nằm trong [game.contract.json](game.contract.json) (game đọc thẳng file này); bản đồ chuẩn ở `src/core/maps.ts`. Spec: [Phase 2](docs/notes/spec-phase-2.md), [Ticket-03](docs/lab/TICKET-03.md), [Ticket-04](docs/lab/TICKET-04.md); quyết định thiết kế: [ADR-001](docs/notes/adr-001-den-can-dau.md). Giả định: [docs/notes/assumptions.md](docs/notes/assumptions.md).
+Số có khóa tuning nằm trong [game.contract.json](game.contract.json) (game đọc thẳng file này); bản đồ chuẩn ở `src/core/maps.ts`. Spec: [Phase 2](docs/notes/spec-phase-2.md), tài liệu lab: [docs/lab/](docs/lab/README.md); quyết định thiết kế: [ADR-001](docs/notes/adr-001-den-can-dau.md). Giả định: [docs/notes/assumptions.md](docs/notes/assumptions.md).
 
 ## Test Contract v1.3 — các lệnh
 

@@ -1,8 +1,7 @@
-// Mô hình Đèn Lồng Lớn (chỉ hiển thị), tự dựng bằng hình khối Three.js:
-// đế gỗ vàng cam bo tròn, 4 trụ khung tối, kính trong, mái tối bo tròn có quai tròn, ngọn lửa bên trong.
+// Mô hình Đèn Lồng Lớn (chỉ hiển thị), tự dựng bằng hình khối Three.js theo dáng cột đèn:
+// chân đế loe, thân cột dài có các vòng đai, đầu đèn kính loe lên trên chia ô, mái chóp có quả cầu trên đỉnh.
 // Ánh sáng theo tiến độ nạp: chưa nạp → tắt; nạp dở → sáng nhẹ; đủ → sáng mạnh + vùng sáng quanh đèn.
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 export interface LanternModel {
   group: THREE.Group;
@@ -10,15 +9,8 @@ export interface LanternModel {
   update(frac: number, lit: boolean, t: number): void;
 }
 
-function teardrop(height: number, radius: number): THREE.LatheGeometry {
-  const pts: THREE.Vector2[] = [];
-  for (let i = 0; i <= 16; i++) {
-    const v = i / 16;
-    const r = radius * Math.sin(Math.PI * Math.min(1, v * 1.15)) * (1 - v * 0.85);
-    pts.push(new THREE.Vector2(Math.max(0.0001, r), v * height));
-  }
-  return new THREE.LatheGeometry(pts, 20);
-}
+/** Chiều cao để đặt thanh tiến độ phía trên đèn. */
+export const LANTERN_TOP_Y = 5.9;
 
 function radialTexture(): THREE.Texture {
   const c = document.createElement('canvas');
@@ -36,82 +28,73 @@ function radialTexture(): THREE.Texture {
 }
 const GLOW = radialTexture();
 
+/** Khối 4 cạnh (hình chóp cụt vuông) xoay 45° để mặt phẳng hướng theo trục X/Z. */
+function squareFrustum(rTop: number, rBottom: number, h: number, mat: THREE.Material): THREE.Mesh {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBottom, h, 4, 1), mat);
+  m.rotation.y = Math.PI / 4;
+  return m;
+}
+
 export function makeLanternModel(safeRadius: number): LanternModel {
   const group = new THREE.Group();
-  const frameMat = new THREE.MeshStandardMaterial({ color: '#2c313c', roughness: 0.55, metalness: 0.2 });
-  const roofMat = new THREE.MeshStandardMaterial({ color: '#3b414d', roughness: 0.5, metalness: 0.15 });
-  const baseMat = new THREE.MeshStandardMaterial({ color: '#c98b3c', roughness: 0.6 });
+  const iron = new THREE.MeshStandardMaterial({ color: '#2f3432', roughness: 0.55, metalness: 0.35 });
+  const ironDark = new THREE.MeshStandardMaterial({ color: '#232726', roughness: 0.6, metalness: 0.3 });
+  const add = (m: THREE.Mesh, y: number) => { m.position.y = y; m.castShadow = true; group.add(m); return m; };
 
-  const body = new THREE.Group();
-  body.scale.setScalar(1.25); // Đèn Lồng Lớn cao khoảng 4.3 m
-  group.add(body);
+  // ---- chân đế ----
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.68, 0.45, 24), ironDark), 0.22);
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.6, 0.12, 24), iron), 0.5);
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.5, 1.1, 24), iron), 1.1); // phần loe
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.16, 20), ironDark), 1.72); // vòng đai dưới
 
-  // đế gỗ
-  const base = new THREE.Mesh(new RoundedBoxGeometry(1.5, 0.36, 1.5, 4, 0.12), baseMat);
-  base.position.y = 0.18;
-  body.add(base);
-  const baseInner = new THREE.Mesh(new RoundedBoxGeometry(1.14, 0.06, 1.14, 2, 0.02), frameMat);
-  baseInner.position.y = 0.39;
-  body.add(baseInner);
+  // ---- thân cột ----
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 2.0, 16), iron), 2.8);
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.16, 20), ironDark), 3.85); // vòng đai trên
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.12, 0.35, 20), iron), 4.1); // cổ loe đỡ đầu đèn
 
-  // 4 trụ khung
-  const pillarGeo = new THREE.CylinderGeometry(0.075, 0.075, 1.75, 8);
-  for (const sx of [-1, 1]) {
-    for (const sz of [-1, 1]) {
-      const p = new THREE.Mesh(pillarGeo, frameMat);
-      p.position.set(sx * 0.6, 1.27, sz * 0.6);
-      body.add(p);
+  // ---- đầu đèn ----
+  const HEAD_Y = 4.95; // tâm phần kính
+  const GLASS_H = 1.1;
+  add(squareFrustum(0.55, 0.55, 0.12, ironDark), HEAD_Y - GLASS_H / 2 - 0.06); // khay đáy
+  const glassMat = new THREE.MeshStandardMaterial({ color: '#3a3428', emissive: '#ffb23c', emissiveIntensity: 0, roughness: 0.3 });
+  const glass = add(squareFrustum(0.6, 0.42, GLASS_H, glassMat), HEAD_Y);
+  glass.castShadow = false;
+  // khung: 4 trụ góc + 2 song cửa mỗi mặt (đi theo độ loe của kính)
+  const barGeo = new THREE.BoxGeometry(0.05, GLASS_H + 0.02, 0.05);
+  const tilt = Math.atan2(0.6 - 0.42, GLASS_H); // độ nghiêng mặt kính
+  for (let side = 0; side < 4; side++) {
+    const a = (side * Math.PI) / 2;
+    for (const u of [-1, -1 / 3, 1 / 3, 1]) {
+      const bar = new THREE.Mesh(barGeo, ironDark);
+      const half = (0.42 + 0.6) / 2 / Math.SQRT2 + 0.012; // nửa cạnh trung bình (xoay 45°)
+      // toạ độ trên mặt phẳng phía trước (z+), rồi xoay quanh trục Y
+      const lx = u * half;
+      const lz = half;
+      bar.position.set(lx * Math.cos(a) + lz * Math.sin(a), HEAD_Y, -lx * Math.sin(a) + lz * Math.cos(a));
+      bar.rotation.y = a;
+      bar.rotateX(tilt);
+      bar.rotateZ(-tilt * u * 0.9);
+      group.add(bar);
     }
   }
-  // thanh ngang trên / dưới
-  for (const y of [0.43, 2.12]) {
-    for (const [w, d, x, z] of [[1.28, 0.08, 0, 0.6], [1.28, 0.08, 0, -0.6], [0.08, 1.28, 0.6, 0], [0.08, 1.28, -0.6, 0]] as const) {
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), frameMat);
-      bar.position.set(x, y, z);
-      body.add(bar);
-    }
-  }
+  add(squareFrustum(0.66, 0.62, 0.16, ironDark), HEAD_Y + GLASS_H / 2 + 0.08); // đai trên kính
+  add(squareFrustum(0.86, 0.86, 0.08, iron), HEAD_Y + GLASS_H / 2 + 0.2); // vành mái
+  add(squareFrustum(0.12, 0.78, 0.55, iron), HEAD_Y + GLASS_H / 2 + 0.5); // mái chóp
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.12, 16), ironDark), HEAD_Y + GLASS_H / 2 + 0.82);
+  add(new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), iron), HEAD_Y + GLASS_H / 2 + 0.98); // quả cầu đỉnh
 
-  // kính
-  const glassMat = new THREE.MeshStandardMaterial({
-    color: '#f2d6b0', transparent: true, opacity: 0.25, roughness: 0.15,
-    emissive: '#ff9a3c', emissiveIntensity: 0, depthWrite: false, side: THREE.DoubleSide,
-  });
-  const glass = new THREE.Mesh(new THREE.BoxGeometry(1.14, 1.66, 1.14), glassMat);
-  glass.position.y = 1.27;
-  body.add(glass);
-
-  // mái + chóp + quai tròn
-  const roof = new THREE.Mesh(new RoundedBoxGeometry(1.75, 0.42, 1.75, 4, 0.16), roofMat);
-  roof.position.y = 2.35;
-  body.add(roof);
-  const roofTop = new THREE.Mesh(new RoundedBoxGeometry(1.2, 0.24, 1.2, 4, 0.1), roofMat);
-  roofTop.position.y = 2.62;
-  body.add(roofTop);
-  const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.26, 20), roofMat);
-  knob.position.y = 2.86;
-  body.add(knob);
-  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.11, 12, 28), roofMat);
-  handle.position.y = 3.3;
-  body.add(handle);
-
-  // ngọn lửa hai lớp
-  const flame = new THREE.Group();
-  const outerMat = new THREE.MeshBasicMaterial({ color: '#ff8a1e', transparent: true, opacity: 0.95 });
-  const innerMat = new THREE.MeshBasicMaterial({ color: '#ffe36a' });
-  const outer = new THREE.Mesh(teardrop(0.95, 0.36), outerMat);
-  const inner = new THREE.Mesh(teardrop(0.55, 0.2), innerMat);
-  inner.position.y = 0.04;
-  flame.add(outer, inner);
-  flame.position.y = 0.55;
-  body.add(flame);
+  // lõi sáng bên trong kính
+  const coreMat = new THREE.MeshBasicMaterial({ color: '#ffe08a', transparent: true, opacity: 0 });
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), coreMat);
+  core.position.y = HEAD_Y;
+  group.add(core);
 
   // ánh đèn
   const light = new THREE.PointLight('#ffa040', 0, 20, 1.3);
-  light.position.y = 1.6;
+  light.position.y = HEAD_Y;
   group.add(light);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-  halo.position.y = 1.6;
+  halo.position.y = HEAD_Y;
   group.add(halo);
   // vùng sáng trên mặt đất (bán kính = vùng an toàn), chỉ khi đèn đã thắp
   const pool = new THREE.Mesh(
@@ -122,45 +105,38 @@ export function makeLanternModel(safeRadius: number): LanternModel {
   pool.position.y = 0.02;
   group.add(pool);
 
-  group.traverse((o) => {
-    if ((o as THREE.Mesh).isMesh && o !== glass && o !== pool && !flame.children.includes(o)) o.castShadow = true;
-  });
-
   return {
     group,
     update(frac, lit, t) {
-      const flick = 1 + Math.sin(t * 13) * 0.05 + Math.sin(t * 7.3) * 0.04;
+      const flick = 1 + Math.sin(t * 11) * 0.04 + Math.sin(t * 6.7) * 0.03;
       const haloMat = halo.material as THREE.SpriteMaterial;
       const poolMat = pool.material as THREE.MeshBasicMaterial;
       if (lit) {
-        // đủ: sáng mạnh + vùng sáng
-        flame.visible = true;
-        flame.scale.set(1, flick, 1);
-        light.intensity = 32 * flick;
+        // đủ: kính vàng cam rực, sáng mạnh + vùng sáng
+        glassMat.color.set('#ffd27a');
+        glassMat.emissiveIntensity = 1.6 * flick;
+        coreMat.opacity = 0.9;
+        light.intensity = 34 * flick;
         light.distance = 22;
-        glassMat.emissiveIntensity = 0.6 * flick;
-        glassMat.opacity = 0.35;
-        haloMat.opacity = 0.7 * flick;
-        halo.scale.setScalar(5.5);
+        haloMat.opacity = 0.75 * flick;
+        halo.scale.setScalar(5);
         poolMat.opacity = 0.55;
       } else if (frac > 0) {
-        // nạp dở: lửa nhỏ, sáng nhẹ theo tiến độ
-        flame.visible = true;
-        const s = 0.35 + frac * 0.4;
-        flame.scale.set(s, s * flick, s);
+        // nạp dở: kính ấm lên, sáng nhẹ theo tiến độ
+        glassMat.color.set('#6a5530');
+        glassMat.emissiveIntensity = (0.2 + frac * 0.45) * flick;
+        coreMat.opacity = 0.25 + frac * 0.35;
         light.intensity = 3 + frac * 7;
         light.distance = 8;
-        glassMat.emissiveIntensity = 0.15 + frac * 0.15;
-        glassMat.opacity = 0.28;
         haloMat.opacity = 0.15 + frac * 0.2;
-        halo.scale.setScalar(2.5);
+        halo.scale.setScalar(2.4);
         poolMat.opacity = 0;
       } else {
-        // chưa nạp: tắt hẳn
-        flame.visible = false;
-        light.intensity = 0;
+        // chưa nạp: tắt hẳn, kính tối
+        glassMat.color.set('#3a3428');
         glassMat.emissiveIntensity = 0;
-        glassMat.opacity = 0.22;
+        coreMat.opacity = 0;
+        light.intensity = 0;
         haloMat.opacity = 0;
         poolMat.opacity = 0;
       }

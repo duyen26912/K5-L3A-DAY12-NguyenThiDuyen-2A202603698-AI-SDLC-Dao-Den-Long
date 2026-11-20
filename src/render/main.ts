@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { createWorld, step, World, InputState, GameEvent, timeLeft } from '../core/world';
 import { TUNING, DT, ISLAND_RADIUS } from '../core/config';
 import { Sfx } from './sfx';
-import { makeLanternModel, LanternModel } from './lantern';
+import { makeLanternModel, LanternModel, LANTERN_TOP_Y } from './lantern';
 
 // ---------- Renderer / scene ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -85,7 +85,7 @@ function makeLantern(): LanternView {
   ring.position.y = 0.03;
   ring.name = 'safe';
   const bar = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.14), new THREE.MeshBasicMaterial({ color: '#ffc46b' }));
-  bar.position.y = 4.9;
+  bar.position.y = LANTERN_TOP_Y + 0.4;
   group.add(ring, bar);
   const flies: THREE.Mesh[] = [];
   for (let i = 0; i < 6; i++) {

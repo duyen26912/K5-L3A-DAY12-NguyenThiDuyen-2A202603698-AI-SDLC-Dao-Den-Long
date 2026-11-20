@@ -1,8 +1,8 @@
-// Đọc scenario / inputs và ghi snapshot theo Test Contract v1.1.
+// Đọc scenario / inputs và ghi snapshot theo Test Contract v1.2.
 import * as C from './config';
 import { TUNING, sec } from './config';
 import {
-  World, InputState, Vec3, ShadeState, DrifterState, addMoteAt, addShade, addDrifter, neutralInput, timeLeft,
+  World, InputState, Vec3, ShadeState, DrifterState, addMoteAt, addShade, addDrifter, neutralInput, timeLeft, capacity, fuelOut,
 } from './world';
 
 /** Lỗi định dạng file đầu vào → headless thoát mã 2. */
@@ -52,7 +52,7 @@ function nextFreeId(ids: string[], prefix: string): number {
   return max + 1;
 }
 
-const SHADE_STATES: ShadeState[] = ['spawning', 'wander', 'chase', 'recoil', 'stunned'];
+const SHADE_STATES: ShadeState[] = ['spawning', 'wander', 'chase', 'recoil', 'stunned', 'drain'];
 const DRIFTER_STATES: DrifterState[] = ['idle', 'chase', 'flee', 'removed'];
 
 // ---------------- Scenario ----------------
@@ -78,6 +78,7 @@ export function applyScenario(w: World, raw: unknown): void {
     p.dashCd = optInt(pl, 'dash_cd_ticks', 'scenario.player') ?? p.dashCd;
     p.pulseCd = optInt(pl, 'pulse_cd_ticks', 'scenario.player') ?? p.pulseCd;
     p.charmTicks = optInt(pl, 'charm_ticks', 'scenario.player') ?? p.charmTicks;
+    p.successfulLights = optInt(pl, 'successful_lights', 'scenario.player') ?? p.successfulLights;
   }
 
   for (const k of ['random_motes', 'random_shades', 'random_drifters', 'wind_enabled']) optBool(sc, k, 'scenario');
@@ -115,10 +116,11 @@ export function applyScenario(w: World, raw: unknown): void {
       const state = (so.state as ShadeState) ?? 'wander';
       const left = optInt(so, 'state_ticks_left', where) ??
         (state === 'stunned' ? sec(TUNING.pulse_stun_s) : state === 'recoil' ? C.RECOIL_TICKS : 0);
-      return { pos: vec3(so.pos, `${where}.pos`), id: so.id as string | undefined, state, left };
+      if (so.target_lantern_id !== undefined && typeof so.target_lantern_id !== 'string') fail(`${where}.target_lantern_id: phải là chuỗi`);
+      return { pos: vec3(so.pos, `${where}.pos`), id: so.id as string | undefined, state, left, target: (so.target_lantern_id as string | undefined) ?? null };
     });
     w.shades = [];
-    for (const it of assignIds(items, 'S')) addShade(w, it.pos, it.id, it.state, it.left);
+    for (const it of assignIds(items, 'S')) addShade(w, it.pos, it.id, it.state, it.left).targetLanternId = it.target;
     w.nextShadeId = nextFreeId(w.shades.map((s) => s.id), 'S');
   }
 
@@ -162,10 +164,17 @@ export function applyScenario(w: World, raw: unknown): void {
       const dep = optInt(lo, 'deposited', where);
       if (dep !== undefined) t.deposited = Math.min(dep, TUNING.lantern_cost);
       const lit = optBool(lo, 'lit', where);
+      const everLit = optBool(lo, 'ever_lit', where);
+      if (lo.fuel !== undefined && (!isNum(lo.fuel) || (lo.fuel as number) < 0 || (lo.fuel as number) > TUNING.fuel_max)) fail(`${where}.fuel: số trong [0, ${TUNING.fuel_max}]`);
       if (lit !== undefined) {
         t.lit = lit;
         if (lit && dep === undefined) t.deposited = TUNING.lantern_cost;
+        // đèn đặt lit: true mà không có fuel → fuel = 100; đèn tắt có fuel 0
+        t.fuelU = lit ? C.FUEL_MAX_U : 0;
+        t.everLit = lit || t.everLit;
       }
+      if (lo.fuel !== undefined && t.lit) t.fuelU = Math.round((lo.fuel as number) * C.FUEL_UNITS);
+      if (everLit !== undefined) t.everLit = everLit || t.lit;
     });
   }
 
@@ -245,8 +254,12 @@ export function snapshot(w: World) {
     player: {
       pos: rv(p.pos), vel: rv(p.vel), grounded: p.grounded, flames: p.flames, carried: p.carried,
       invuln: p.invulnTicks > 0, dash_cd_s: secs(p.dashCd), pulse_cd_s: secs(p.pulseCd), charm_s: secs(p.charmTicks),
+      capacity: capacity(w),
     },
-    lanterns: w.lanterns.map((l) => ({ id: l.id, pos: rv(l.pos), lit: l.lit, deposited: l.deposited })),
+    lanterns: w.lanterns.map((l) => ({
+      id: l.id, pos: rv(l.pos), lit: l.lit, deposited: l.deposited,
+      fuel: l.lit ? fuelOut(l) : 0, ever_lit: l.everLit, relit_count: l.relitCount,
+    })),
     shades: w.shades.map((s) => ({ id: s.id, pos: rv(s.pos), state: s.state })),
     motes_active: w.motes.length,
     motes: w.motes.map((m) => ({ id: m.id, pos: rv(m.pos), kind: m.kind, ttl_s: m.ttl === null ? null : secs(m.ttl) })),

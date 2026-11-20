@@ -72,3 +72,16 @@ export const WIND_WARN = 120;
 export const WIND_SPEED = 2;
 
 // Thưởng khi thắng: + floor(giây còn lại) × per_second_left + per_flame_left × Ngọn Lửa
+
+// Ticket-03 (Contract v1.2): dầu đèn tính bằng đơn vị nguyên 1/60 để không sai số số thực
+export const FUEL_UNITS = TICK_RATE; // 1 fuel = 60 đơn vị
+export const FUEL_MAX_U = Math.round(TUNING.fuel_max * FUEL_UNITS);
+export const FUEL_DECAY_U = Math.round(TUNING.fuel_decay_per_s); // mỗi tick: decay/s × 60 ÷ 60
+export const DRAIN_U = Math.round(TUNING.drain_per_s); // mỗi tick mỗi Bóng Mực đang hút
+export const LOW_FUEL_U = Math.round(TUNING.low_fuel_threshold * FUEL_UNITS);
+export const FUEL_PER_MOTE_U = Math.round(TUNING.fuel_per_mote * FUEL_UNITS);
+export const DRAIN_RANGE = 2;
+export const DRAIN_BREAK_DIST = 6; // Mây vào trong 6 m → Bóng Mực bỏ hút, đuổi theo
+export const FUEL_DRAIN_EVENT_EVERY = 60;
+export const CAPACITY_BASE = TUNING.carry_capacity;
+export const CAPACITY_PER_LIGHT = 2;

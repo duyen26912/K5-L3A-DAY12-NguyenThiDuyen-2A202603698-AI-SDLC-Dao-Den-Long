@@ -1,6 +1,6 @@
-// Bụi cỏ lá trang trí (chỉ hiển thị, không va chạm, không ảnh hưởng luật chơi):
-// mỗi bụi là nhiều chùm lá nhỏ chồng lên nhau, xanh đậm ở dưới và xanh vàng ở trên,
-// kèm cỏ lưa thưa ở gốc và vài bông hoa vàng nhỏ. Có 3 cỡ: nhỏ, vừa, to (dạng gò rộng).
+// Bụi cây trang trí (chỉ hiển thị, không va chạm, không ảnh hưởng luật chơi), dáng hoạt hình mềm:
+// nhiều khối tròn xanh chồng thành tán, lá nhỏ thò ra trên mặt tán, thân nâu phân nhánh ở dưới,
+// vài lá phẳng quanh gốc. Có 3 cỡ: nhỏ, vừa, to.
 import * as THREE from 'three';
 
 /** RNG riêng cho trang trí, cố định để cảnh giống nhau mỗi lần mở. */
@@ -14,104 +14,105 @@ function decoRng(seed: number) {
   };
 }
 
-type Size = 'small' | 'medium' | 'large';
-interface Bush { x: number; z: number; size: Size; rot: number }
+// Khuôn tán ở cỡ 1 (cao ~2 m): [x, y, z, bán kính]
+const BALLS: [number, number, number, number][] = [
+  [0, 1.45, 0, 0.55],
+  [-0.55, 1.15, 0.1, 0.45], [0.55, 1.2, 0, 0.45], [0.1, 1.15, -0.5, 0.45], [0.2, 1.1, 0.45, 0.42],
+  [-0.75, 0.78, 0.2, 0.4], [0.75, 0.78, 0.15, 0.4], [-0.25, 0.82, 0.6, 0.45], [0.38, 0.76, 0.6, 0.42],
+  [0, 0.82, -0.62, 0.42], [-0.6, 0.76, -0.42, 0.38], [0.6, 0.76, -0.42, 0.38],
+];
+// điểm cuối các nhánh thân (gốc ở (0, 0, 0))
+const BRANCHES: [number, number, number][] = [
+  [-0.45, 0.6, 0.25], [0.45, 0.6, 0.2], [0, 0.65, 0.4], [-0.3, 0.6, -0.35], [0.35, 0.6, -0.3],
+];
+const LEAVES_PER_BALL = 2;
+const BASE_LEAVES = 7;
 
-const SHAPE: Record<Size, { w: number; d: number; h: number; clumps: number; flowers: number }> = {
-  small: { w: 0.7, d: 0.7, h: 0.75, clumps: 22, flowers: 1 },
-  medium: { w: 1.1, d: 1.0, h: 1.3, clumps: 42, flowers: 3 },
-  large: { w: 2.3, d: 1.3, h: 1.4, clumps: 80, flowers: 2 },
-};
-
-const LEAF_DARK = new THREE.Color('#1d5e24');
-const LEAF_MID = new THREE.Color('#3f9a2e');
-const LEAF_TOP = new THREE.Color('#a6d43a');
+const SIZE_SCALE = [0.55, 0.85, 1.2]; // nhỏ, vừa, to
+const LOW = new THREE.Color('#3a962e');
+const HIGH = new THREE.Color('#93d24e');
 
 export function addBushes(scene: THREE.Scene, spots: { x: number; z: number }[]): void {
-  const rnd = decoRng(12345);
-  const bushes: Bush[] = spots.map((s, i) => ({
-    x: s.x, z: s.z, rot: rnd() * Math.PI * 2,
-    size: (['small', 'medium', 'large'] as const)[i % 3],
-  }));
+  const rnd = decoRng(4242);
+  const n = spots.length;
 
-  const totalClumps = bushes.reduce((n, b) => n + SHAPE[b.size].clumps, 0);
-  const totalFlowers = bushes.reduce((n, b) => n + SHAPE[b.size].flowers, 0);
-  const totalGrass = bushes.length * 14;
+  const ballMat = new THREE.MeshStandardMaterial({ roughness: 0.65, emissive: '#0d2a08', emissiveIntensity: 1 });
+  const leafMat = new THREE.MeshStandardMaterial({ color: '#58b53a', roughness: 0.6, emissive: '#0d2a08' });
+  const trunkMat = new THREE.MeshStandardMaterial({ color: '#7a5a38', roughness: 0.9 });
 
-  // chùm lá: khối nhiều mặt, đổ bóng phẳng cho cảm giác lá xếp lớp
-  const clumpGeo = new THREE.IcosahedronGeometry(0.28, 0);
-  const clumpMat = new THREE.MeshStandardMaterial({ roughness: 0.85, flatShading: true });
-  const clumps = new THREE.InstancedMesh(clumpGeo, clumpMat, totalClumps);
-  clumps.castShadow = true;
-  clumps.receiveShadow = true;
-
-  const grassGeo = new THREE.ConeGeometry(0.035, 0.32, 3);
-  grassGeo.translate(0, 0.16, 0);
-  const grass = new THREE.InstancedMesh(grassGeo, new THREE.MeshStandardMaterial({ color: '#4c9a35', roughness: 1 }), totalGrass);
-
-  const flowerGeo = new THREE.SphereGeometry(0.045, 6, 4);
-  const flowers = new THREE.InstancedMesh(flowerGeo, new THREE.MeshStandardMaterial({ color: '#ffe14d', emissive: '#6b5a00', emissiveIntensity: 0.4 }), totalFlowers);
+  const balls = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 20, 14), ballMat, n * BALLS.length);
+  const leaves = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 6), leafMat, n * (BALLS.length * LEAVES_PER_BALL + BASE_LEAVES));
+  const branchGeo = new THREE.CylinderGeometry(0.6, 1, 1, 6);
+  branchGeo.translate(0, 0.5, 0); // gốc nhánh ở đáy
+  const branches = new THREE.InstancedMesh(branchGeo, trunkMat, n * BRANCHES.length);
+  balls.castShadow = true;
+  balls.receiveShadow = true;
+  branches.castShadow = true;
 
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
-  const e = new THREE.Euler();
   const p = new THREE.Vector3();
-  const sc = new THREE.Vector3();
+  const s = new THREE.Vector3();
+  const dir = new THREE.Vector3();
+  const UP = new THREE.Vector3(0, 1, 0);
   const col = new THREE.Color();
-  let ci = 0;
-  let gi = 0;
-  let fi = 0;
+  let bi = 0;
+  let li = 0;
+  let ri = 0;
 
-  for (const b of bushes) {
-    const sh = SHAPE[b.size];
-    const cos = Math.cos(b.rot);
-    const sin = Math.sin(b.rot);
-    const place = (lx: number, y: number, lz: number) => p.set(b.x + lx * cos + lz * sin, y, b.z - lx * sin + lz * cos);
+  spots.forEach((spot, idx) => {
+    const k = SIZE_SCALE[idx % 3] * (0.9 + rnd() * 0.2);
+    const rot = rnd() * Math.PI * 2;
+    const cos = Math.cos(rot);
+    const sin = Math.sin(rot);
+    const world = (lx: number, ly: number, lz: number) =>
+      p.set(spot.x + (lx * cos + lz * sin) * k, ly * k, spot.z + (-lx * sin + lz * cos) * k);
 
-    for (let k = 0; k < sh.clumps; k++) {
-      // điểm ngẫu nhiên trong nửa ellipsoid (mái vòm), dày hơn ở lớp ngoài
-      const u = rnd() * Math.PI * 2;
-      const v = Math.acos(rnd()); // 0 = đỉnh, π/2 = mép dưới
-      const r = 0.55 + rnd() * 0.45;
-      let lx = Math.sin(v) * Math.cos(u) * r * sh.w;
-      const ly = Math.cos(v) * r * sh.h;
-      const lz = Math.sin(v) * Math.sin(u) * r * sh.d;
-      if (b.size === 'large') lx += Math.sin(u * 2) * 0.25; // gò rộng hơi gồ ghề, hai đỉnh
-      place(lx, ly + 0.12, lz);
-      const s = (b.size === 'small' ? 0.8 : 1) * (0.75 + rnd() * 0.6);
-      sc.set(s, s * (0.8 + rnd() * 0.3), s);
-      e.set(rnd() * 3, rnd() * 3, rnd() * 3);
-      q.setFromEuler(e);
-      m.compose(p, q, sc);
-      clumps.setMatrixAt(ci, m);
-      // màu theo độ cao: gốc xanh đậm → ngọn xanh vàng, thêm chút biến thiên
-      const hFrac = Math.min(1, Math.max(0, ly / sh.h));
-      if (hFrac < 0.5) col.copy(LEAF_DARK).lerp(LEAF_MID, hFrac * 2);
-      else col.copy(LEAF_MID).lerp(LEAF_TOP, (hFrac - 0.5) * 2);
-      col.offsetHSL((rnd() - 0.5) * 0.03, 0, (rnd() - 0.5) * 0.08);
-      clumps.setColorAt(ci, col);
-      ci++;
+    // thân nâu phân nhánh
+    for (const [ex, ey, ez] of BRANCHES) {
+      dir.set(ex * cos + ez * sin, ey, -ex * sin + ez * cos).normalize();
+      q.setFromUnitVectors(UP, dir);
+      const len = Math.hypot(ex, ey, ez) * k * 1.05;
+      m.compose(p.set(spot.x, 0, spot.z), q, s.set(0.06 * k, len, 0.06 * k));
+      branches.setMatrixAt(ri++, m);
     }
 
-    for (let k = 0; k < 14; k++) {
-      const a = rnd() * Math.PI * 2;
-      const rr = 0.85 + rnd() * 0.35;
-      place(Math.cos(a) * sh.w * rr, 0, Math.sin(a) * sh.d * rr);
-      e.set((rnd() - 0.5) * 0.6, rnd() * 3, (rnd() - 0.5) * 0.6);
-      q.setFromEuler(e);
-      const s = 0.7 + rnd() * 0.7;
-      m.compose(p, q, sc.set(1, s, 1));
-      grass.setMatrixAt(gi++, m);
+    // tán: các khối tròn, càng cao càng sáng
+    for (const [x, y, z, r] of BALLS) {
+      const rr = r * (0.92 + rnd() * 0.16);
+      m.compose(world(x, y, z), q.identity(), s.setScalar(rr * k));
+      balls.setMatrixAt(bi, m);
+      col.copy(LOW).lerp(HIGH, Math.min(1, Math.max(0, (y - 0.7) / 0.85)));
+      col.offsetHSL((rnd() - 0.5) * 0.02, 0, (rnd() - 0.5) * 0.05);
+      balls.setColorAt(bi++, col);
+
+      // lá nhỏ thò ra trên mặt khối, hướng ra ngoài
+      for (let j = 0; j < LEAVES_PER_BALL; j++) {
+        const u = rnd() * Math.PI * 2;
+        const v = rnd() * 1.2; // phần trên của khối
+        const nx = Math.sin(v) * Math.cos(u);
+        const ny = Math.cos(v);
+        const nz = Math.sin(v) * Math.sin(u);
+        world(x + nx * rr * 1.02, y + ny * rr * 1.02, z + nz * rr * 1.02);
+        dir.set(nx * cos + nz * sin, ny, -nx * sin + nz * cos).normalize();
+        q.setFromUnitVectors(UP, dir);
+        m.compose(p, q, s.set(0.07 * k, 0.15 * k, 0.035 * k));
+        leaves.setMatrixAt(li++, m);
+      }
     }
 
-    for (let k = 0; k < sh.flowers; k++) {
-      const a = rnd() * Math.PI * 2;
-      place(Math.cos(a) * sh.w * 0.95, 0.08 + rnd() * 0.15, Math.sin(a) * sh.d * 0.95);
-      m.compose(p, q.identity(), sc.set(1, 1, 1));
-      flowers.setMatrixAt(fi++, m);
+    // lá phẳng quanh gốc
+    for (let j = 0; j < BASE_LEAVES; j++) {
+      const a = (j / BASE_LEAVES) * Math.PI * 2 + rnd() * 0.5;
+      const rad = 0.55 + rnd() * 0.25;
+      world(Math.cos(a) * rad, 0.05, Math.sin(a) * rad);
+      q.setFromAxisAngle(UP, -a + rot);
+      m.compose(p, q, s.set(0.28 * k, 0.05 * k, 0.14 * k));
+      leaves.setMatrixAt(li++, m);
     }
-  }
-  clumps.instanceMatrix.needsUpdate = true;
-  if (clumps.instanceColor) clumps.instanceColor.needsUpdate = true;
-  scene.add(clumps, grass, flowers);
+  });
+
+  balls.instanceMatrix.needsUpdate = true;
+  if (balls.instanceColor) balls.instanceColor.needsUpdate = true;
+  scene.add(balls, leaves, branches);
 }

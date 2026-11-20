@@ -2,6 +2,7 @@
 // chân đế loe, thân cột dài có các vòng đai, đầu đèn kính loe lên trên chia ô, mái chóp có quả cầu trên đỉnh.
 // Ánh sáng theo tiến độ nạp: chưa nạp → tắt; nạp dở → sáng nhẹ; đủ → sáng mạnh + vùng sáng quanh đèn.
 import * as THREE from 'three';
+import { makeFlame } from './flame';
 
 export interface LanternModel {
   group: THREE.Group;
@@ -56,7 +57,7 @@ export function makeLanternModel(safeRadius: number): LanternModel {
   const HEAD_Y = 4.95; // tâm phần kính
   const GLASS_H = 1.1;
   add(squareFrustum(0.55, 0.55, 0.12, ironDark), HEAD_Y - GLASS_H / 2 - 0.06); // khay đáy
-  const glassMat = new THREE.MeshStandardMaterial({ color: '#3a3428', emissive: '#ffb23c', emissiveIntensity: 0, roughness: 0.3 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: '#5B5F6E', emissive: '#FFB347', emissiveIntensity: 0, roughness: 0.3, transparent: true, opacity: 0.85, depthWrite: false });
   const glass = add(squareFrustum(0.6, 0.42, GLASS_H, glassMat), HEAD_Y);
   glass.castShadow = false;
   // khung: 4 trụ góc + 2 song cửa mỗi mặt (đi theo độ loe của kính)
@@ -83,14 +84,14 @@ export function makeLanternModel(safeRadius: number): LanternModel {
   add(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.12, 16), ironDark), HEAD_Y + GLASS_H / 2 + 0.82);
   add(new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), iron), HEAD_Y + GLASS_H / 2 + 0.98); // quả cầu đỉnh
 
-  // lõi sáng bên trong kính
-  const coreMat = new THREE.MeshBasicMaterial({ color: '#ffe08a', transparent: true, opacity: 0 });
-  const core = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), coreMat);
-  core.position.y = HEAD_Y;
-  group.add(core);
+  // ngọn lửa bên trong kính (cùng kiểu với đom đóm): hiện khi đèn có ánh sáng
+  const fire = makeFlame(0.9, 1.8, 0.7);
+  fire.group.position.y = HEAD_Y - 0.12;
+  fire.group.visible = false;
+  group.add(fire.group);
 
   // ánh đèn
-  const light = new THREE.PointLight('#ffa040', 0, 20, 1.3);
+  const light = new THREE.PointLight('#FFB347', 0, 20, 1.3);
   light.position.y = HEAD_Y;
   group.add(light);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -113,9 +114,12 @@ export function makeLanternModel(safeRadius: number): LanternModel {
       const poolMat = pool.material as THREE.MeshBasicMaterial;
       if (lit) {
         // đủ: kính vàng cam rực, sáng mạnh + vùng sáng
-        glassMat.color.set('#ffd27a');
-        glassMat.emissiveIntensity = 1.6 * flick;
-        coreMat.opacity = 0.9;
+        glassMat.color.set('#FFB347');
+        glassMat.emissiveIntensity = 0.55 * flick;
+        glassMat.opacity = 0.4; // kính trong để thấy lửa
+        fire.group.visible = true;
+        fire.group.scale.setScalar(0.9);
+        fire.animate(t);
         light.intensity = 34 * flick;
         light.distance = 22;
         haloMat.opacity = 0.75 * flick;
@@ -124,8 +128,11 @@ export function makeLanternModel(safeRadius: number): LanternModel {
       } else if (frac > 0) {
         // nạp dở: kính ấm lên, sáng nhẹ theo tiến độ
         glassMat.color.set('#6a5530');
-        glassMat.emissiveIntensity = (0.2 + frac * 0.45) * flick;
-        coreMat.opacity = 0.25 + frac * 0.35;
+        glassMat.emissiveIntensity = (0.1 + frac * 0.2) * flick;
+        glassMat.opacity = 0.55;
+        fire.group.visible = true; // lửa nhỏ, lớn dần theo tiến độ nạp
+        fire.group.scale.setScalar(0.35 + frac * 0.45);
+        fire.animate(t);
         light.intensity = 3 + frac * 7;
         light.distance = 8;
         haloMat.opacity = 0.15 + frac * 0.2;
@@ -133,9 +140,10 @@ export function makeLanternModel(safeRadius: number): LanternModel {
         poolMat.opacity = 0;
       } else {
         // chưa nạp: tắt hẳn, kính tối
-        glassMat.color.set('#3a3428');
+        glassMat.color.set('#5B5F6E');
         glassMat.emissiveIntensity = 0;
-        coreMat.opacity = 0;
+        glassMat.opacity = 0.85;
+        fire.group.visible = false;
         light.intensity = 0;
         haloMat.opacity = 0;
         poolMat.opacity = 0;

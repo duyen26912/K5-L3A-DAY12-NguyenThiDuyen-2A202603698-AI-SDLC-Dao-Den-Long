@@ -32,7 +32,7 @@ const SIZE_SCALE = [0.55, 0.85, 1.2]; // nhỏ, vừa, to
 const LOW = new THREE.Color('#3a962e');
 const HIGH = new THREE.Color('#93d24e');
 
-export function addBushes(scene: THREE.Scene, spots: { x: number; z: number }[]): void {
+export function addBushes(scene: THREE.Object3D, spots: { x: number; z: number }[]): void {
   const rnd = decoRng(4242);
   const n = spots.length;
 

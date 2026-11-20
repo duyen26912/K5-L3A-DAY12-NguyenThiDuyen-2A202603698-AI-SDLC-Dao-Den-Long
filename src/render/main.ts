@@ -1,13 +1,13 @@
 // Phần hiển thị: Three.js chỉ ĐỌC trạng thái từ core để vẽ. Mọi luật chơi nằm trong src/core.
 import * as THREE from 'three';
-import { createWorld, step, World, InputState, GameEvent, timeLeft, neutralInput } from '../core/world';
+import { createWorld, step, World, InputState, GameEvent, timeLeft, neutralInput, capacity, winThreshold } from '../core/world';
 import { TUNING, DT } from '../core/config';
 import { MAPS } from '../core/maps';
 import { Sfx } from './sfx';
 import { makeLanternModel, LanternModel, LANTERN_TOP_Y } from './lantern';
 import { buildMap, MapView } from './mapview';
 import { PAL } from './palette';
-import { makeMay, makeMote as makeMoteModel, makeShadeModel, makeDrifterModel, makeCharmModel, makePickupBurst } from './actors';
+import { makeMay, makeMote as makeMoteModel, makeShadeModel, makeDrifterModel, makeCharmModel, makePickupBurst, shadeTheme } from './actors';
 
 const $ = (id: string) => document.getElementById(id) as HTMLElement;
 
@@ -61,13 +61,21 @@ let pulseT = 1;
 
 // ---------- Cài đặt (lưu giữa các lần mở game) ----------
 const SETTINGS_KEY = 'dao-den-long-settings';
-const settings = { volume: 0.7, sensitivity: 0.3 };
+const settings = { volume: 0.7, sensitivity: 0.3, colorblind: false };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}')); } catch { /* bỏ qua */ }
 const sfx = new Sfx();
 sfx.setVolume(settings.volume);
 const vol = $('set-vol') as HTMLInputElement;
 const sens = $('set-sens') as HTMLInputElement;
+const cb = $('set-cb') as HTMLInputElement;
+const applyTheme = () => {
+  // Ticket-03 chế độ mù màu: Bóng Mực #00B3FF, cảnh báo UI #FFFFFF kèm ⚠
+  shadeTheme.rim = settings.colorblind ? '#00B3FF' : PAL.shadeRim;
+  document.documentElement.style.setProperty('--danger', settings.colorblind ? '#FFFFFF' : PAL.uiDanger);
+};
 const syncSettingsUI = () => {
+  cb.checked = settings.colorblind;
+  applyTheme();
   vol.value = String(settings.volume);
   sens.value = String(settings.sensitivity);
   $('set-vol-v').textContent = `${Math.round(settings.volume * 100)}%`;
@@ -80,6 +88,7 @@ const saveSettings = () => {
 };
 vol.addEventListener('input', () => { settings.volume = Number(vol.value); saveSettings(); });
 sens.addEventListener('input', () => { settings.sensitivity = Number(sens.value); saveSettings(); });
+cb.addEventListener('change', () => { settings.colorblind = cb.checked; saveSettings(); });
 syncSettingsUI();
 
 // ---------- Input ----------
@@ -184,7 +193,7 @@ function loadNight(n: number) {
   $('i-night').textContent = `Đêm ${n}`;
   $('i-name').textContent = map.name;
   $('i-quote').textContent = QUOTES[n];
-  $('i-count').textContent = String(map.lanterns.length);
+  $('i-count').textContent = `${Math.ceil(TUNING.win_ratio * map.lanterns.length - 1e-9)}/${map.lanterns.length}`;
   $('i-time').textContent = `${map.durationS} giây`;
   flow = 'intro';
   show('s-intro');
@@ -207,6 +216,8 @@ function onEvents(evts: GameEvent[]) {
     }
     if (e.name === 'deposit') sfx.deposit();
     if (e.name === 'lantern_lit') sfx.lit();
+    if (e.name === 'refuel') sfx.deposit();
+    if (e.name === 'lantern_out') sfx.hit();
     if (e.name === 'pulse') { pulseT = 0; sfx.pulse(); }
     if (e.name === 'dash') sfx.dash();
     if (e.name === 'charm_picked') sfx.charm();
@@ -230,7 +241,7 @@ function endNight(won: boolean, reason: string) {
     setButtons([['Về menu', 'menu']]);
   } else {
     flow = 'result';
-    const why = reason === 'dawn' ? 'Trời đã sáng mà đảo chưa kịp thắp hết đèn.' : reason === 'no_flames' ? 'Ngọn lửa của Mây đã tắt.' : `${MAPS[night].name} đã sáng trở lại!`;
+    const why = reason === 'dawn' ? `Bình minh lên nhưng chưa đủ ${winThreshold(world)} đèn sáng.` : reason === 'dawn_survived' ? `Mây giữ được ${world.lanterns.filter((l) => l.lit).length} đèn sáng tới bình minh!` : reason === 'no_flames' ? 'Ngọn lửa của Mây đã tắt.' : `${MAPS[night].name} đã sáng trở lại!`;
     $('r-title').textContent = won ? `Đêm ${night} hoàn thành!` : `Đêm ${night} thất bại`;
     $('r-sub').innerHTML = `${why}<br>Điểm đêm này: <b>${won ? world.score : 0}</b> · Tổng: <b>${totalScore}</b>`;
     setButtons(won ? [[`Sang Đêm ${night + 1}`, 'next'], ['Về menu', 'menu']] : [['Chơi lại Đêm', 'restart'], ['Về menu', 'menu']]);
@@ -344,11 +355,16 @@ function draw(t: number, dtReal: number) {
     const v = lanternViews.get(l.id);
     if (!v) continue;
     const frac = l.deposited / TUNING.lantern_cost;
-    v.model.update(frac, l.lit, t + l.pos[0]);
-    v.bar.scale.x = Math.max(0.001, frac);
-    v.bar.visible = !l.lit;
+    const fuel = l.fuelU / 60;
+    v.model.update(frac, l.lit, t + l.pos[0], fuel);
+    // thanh tiến độ: chưa sáng = số đom đóm đã nạp; đang sáng = thanh dầu (nhấp nháy 1 Hz khi < 30)
+    const cost = l.everLit ? TUNING.relight_cost : TUNING.lantern_cost;
+    const barFrac = l.lit ? fuel / TUNING.fuel_max : l.deposited / cost;
+    v.bar.scale.x = Math.max(0.001, barFrac);
+    v.bar.visible = l.lit ? !(fuel < TUNING.low_fuel_threshold && t % 1 > 0.5) : l.deposited > 0;
+    (v.bar.material as THREE.MeshBasicMaterial).color.set(l.lit ? (fuel < TUNING.low_fuel_threshold ? (settings.colorblind ? '#ffffff' : PAL.uiDanger) : PAL.lanternLit) : PAL.gold);
     v.bar.lookAt(camera.position.x, v.bar.getWorldPosition(tmp).y, camera.position.z);
-    (v.ring.material as THREE.MeshBasicMaterial).opacity = l.lit ? 0.35 : 0;
+    (v.ring.material as THREE.MeshBasicMaterial).opacity = l.lit && fuel >= TUNING.low_fuel_threshold ? 0.35 : 0; // fuel < 30: mất vùng an toàn
     if (l.lit) litCount++;
   }
   // ánh sáng môi trường tăng theo tiến độ: 0.15 + 0.55 × (đèn sáng / tổng đèn)
@@ -409,7 +425,7 @@ function draw(t: number, dtReal: number) {
 }
 
 const moteCells: HTMLElement[] = [];
-for (let i = 0; i < TUNING.carry_capacity; i++) {
+for (let i = 0; i < TUNING.capacity_max; i++) {
   const s = document.createElement('span');
   $('h-motes').appendChild(s);
   moteCells.push(s);
@@ -424,10 +440,14 @@ function updateHud(litCount: number) {
   const secs = Math.ceil(tl - 1e-9);
   $('h-timer').textContent = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`;
   $('h-timer').classList.toggle('danger', tl <= 30);
+  if (tl <= 30 && settings.colorblind) $('h-timer').textContent = `⚠ ${$('h-timer').textContent}`; // mù màu: cảnh báo kèm biểu tượng
   if (playing && !world.paused && secs <= 10 && secs > 0 && secs !== lastCountdown) { lastCountdown = secs; sfx.countdown(); }
   $('h-lit').textContent = `${litCount}/${world.lanterns.length}`;
   $('h-score').textContent = String(totalScore + world.score);
-  moteCells.forEach((c, i) => c.classList.toggle('on', i < p.carried));
+  const cap = capacity(world);
+  moteCells.forEach((c, i) => { c.classList.toggle('on', i < p.carried); c.style.display = i < cap ? '' : 'none'; });
+  $('h-cap').textContent = `${p.carried} / ${cap}`;
+  $('h-cap').style.visibility = playing ? 'visible' : 'hidden';
   const setCd = (id: string, left: number, total: number, ready: boolean) => {
     ($(id).querySelector('.fill') as HTMLElement).style.height = `${Math.min(100, (left / total) * 100)}%`;
     $(id).style.opacity = ready ? '1' : '0.6';
@@ -446,7 +466,9 @@ function updateHud(litCount: number) {
   arrow.style.display = 'none';
   if (target && playing) {
     const d = Math.hypot(target.pos[0] - p.pos[0], target.pos[2] - p.pos[2]);
-    if (d <= TUNING.interact_radius + 0.5 && Math.abs(target.pos[1] - p.pos[1]) <= 1.5) hint = `E — Nạp ánh sáng (${target.deposited}/${TUNING.lantern_cost})`;
+    if (d <= TUNING.interact_radius + 0.5 && Math.abs(target.pos[1] - p.pos[1]) <= 1.5) hint = `E — Nạp ánh sáng (${target.deposited}/${target.everLit ? TUNING.relight_cost : TUNING.lantern_cost})`;
+    const refill = world.lanterns.find((l) => l.lit && l.fuelU < TUNING.fuel_max * 60 && Math.hypot(l.pos[0] - p.pos[0], l.pos[2] - p.pos[2]) <= TUNING.interact_radius + 0.5 && Math.abs(l.pos[1] - p.pos[1]) <= 1.5);
+    if (refill && p.carried > 0) hint = `E — Châm dầu (${Math.floor(refill.fuelU / 60)}/${TUNING.fuel_max})`;
     const v = new THREE.Vector3(target.pos[0], target.pos[1] + 2, target.pos[2]).project(camera);
     const behind = v.z > 1;
     if (behind || Math.abs(v.x) > 1 || Math.abs(v.y) > 1) {

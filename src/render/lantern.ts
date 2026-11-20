@@ -7,7 +7,8 @@ import { makeFlame } from './flame';
 export interface LanternModel {
   group: THREE.Group;
   /** frac = deposited / lantern_cost (0…1), lit = đèn đã thắp. */
-  update(frac: number, lit: boolean, t: number): void;
+  /** fuel 0…100 (đèn sáng). Đèn tắt: xẹp 20% + vết rách; fuel < 30: nhấp nháy 1 Hz (phân biệt không cần màu). */
+  update(frac: number, lit: boolean, t: number, fuel?: number): void;
 }
 
 /** Chiều cao để đặt thanh tiến độ phía trên đèn. */
@@ -84,6 +85,19 @@ export function makeLanternModel(safeRadius: number): LanternModel {
   add(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.12, 16), ironDark), HEAD_Y + GLASS_H / 2 + 0.82);
   add(new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), iron), HEAD_Y + GLASS_H / 2 + 0.98); // quả cầu đỉnh
 
+  // vết rách trên giấy/kính khi đèn tắt (Ticket-03: phân biệt đèn tắt không cần màu)
+  const tearMat = new THREE.MeshBasicMaterial({ color: '#d8d2c0' }); // vết rách lộ giấy sáng màu trên kính tối
+  const tears: THREE.Mesh[] = [];
+  for (const z of [0.31, -0.31]) {
+    for (const [dx, dy, rot, len] of [[-0.08, 0.15, 0.7, 0.42], [0.1, -0.12, -0.5, 0.34]] as const) {
+      const tear = new THREE.Mesh(new THREE.BoxGeometry(0.06, len, 0.01), tearMat);
+      tear.position.set(dx, HEAD_Y + dy, z);
+      tear.rotation.z = rot;
+      group.add(tear);
+      tears.push(tear);
+    }
+  }
+
   // ngọn lửa bên trong kính (cùng kiểu với đom đóm): hiện khi đèn có ánh sáng
   const fire = makeFlame(0.9, 1.8, 0.7);
   fire.group.position.y = HEAD_Y - 0.12;
@@ -108,8 +122,13 @@ export function makeLanternModel(safeRadius: number): LanternModel {
 
   return {
     group,
-    update(frac, lit, t) {
-      const flick = 1 + Math.sin(t * 11) * 0.04 + Math.sin(t * 6.7) * 0.03;
+    update(frac, lit, t, fuel = 100) {
+      // sắp hết dầu: nhấp nháy chậm 1 Hz (nửa giây sáng, nửa giây mờ)
+      const low = lit && fuel < 30;
+      const blink = low && (t % 1) > 0.5 ? 0.3 : 1;
+      const flick = (1 + Math.sin(t * 11) * 0.04 + Math.sin(t * 6.7) * 0.03) * blink;
+      group.scale.y = lit || frac > 0 ? 1 : 0.8; // đèn tắt bị xẹp 20%
+      for (const tr of tears) tr.visible = !lit;
       const haloMat = halo.material as THREE.SpriteMaterial;
       const poolMat = pool.material as THREE.MeshBasicMaterial;
       if (lit) {

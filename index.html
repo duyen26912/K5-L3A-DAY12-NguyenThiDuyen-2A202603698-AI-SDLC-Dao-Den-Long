@@ -53,9 +53,10 @@
   <body>
     <div class="hud" id="h-flames"></div>
     <div class="hud" id="h-timer">05:00</div>
-    <div class="hud" id="h-right"><div class="chip">Đèn <b id="h-lit">0/5</b></div><div class="chip">Điểm <b id="h-score">0</b></div></div>
+    <div class="hud" id="h-right"><div class="chip">Đèn sáng <b id="h-lit">0/5</b></div><div class="chip">Điểm <b id="h-score">0</b></div></div>
     <div class="hud" id="h-wind"></div>
     <div class="hud" id="h-motes"></div>
+    <div class="hud" id="h-cap" style="bottom: 44px; left: 50%; transform: translateX(-50%); font-size: 13px; color: var(--gold)"></div>
     <div class="hud" id="h-charm"></div>
     <div class="hud" id="h-cds">
       <div class="cd" id="cd-dash"><div class="fill"></div><span class="ico">💨</span>Lướt</div>
@@ -90,7 +91,7 @@
       <h2 id="i-night"></h2>
       <h1 id="i-name"></h1>
       <p class="quote" id="i-quote"></p>
-      <p>Thắp <b id="i-count"></b> Đèn Lồng Lớn trong <b id="i-time"></b>.</p>
+      <p>Giữ ít nhất <b id="i-count"></b> Đèn Lồng Lớn sáng tới bình minh (<b id="i-time"></b>). Đèn hết dầu sẽ tắt — nhớ châm dầu!</p>
       <div class="btns"><button data-act="play">Vào đêm (Enter)</button></div>
     </div>
     <div class="screen" id="s-result">
@@ -111,6 +112,7 @@
       <h1>Cài đặt</h1>
       <label>Âm lượng <input type="range" id="set-vol" min="0" max="1" step="0.05" /> <span id="set-vol-v"></span></label>
       <label>Độ nhạy chuột <input type="range" id="set-sens" min="0.1" max="1" step="0.05" /> <span id="set-sens-v"></span></label>
+      <label><input type="checkbox" id="set-cb" /> Bảng màu dễ phân biệt (mù màu)</label>
       <div class="btns"><button data-act="settings-back">Xong</button></div>
     </div>
     <script type="module" src="/src/render/main.ts"></script>

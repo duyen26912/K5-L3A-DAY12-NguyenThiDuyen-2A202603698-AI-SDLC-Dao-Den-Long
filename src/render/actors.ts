@@ -229,6 +229,9 @@ export function makePickupBurst(): { group: THREE.Group; readonly active: boolea
   };
 }
 
+/** Chế độ mù màu (Ticket-03): viền và mắt Bóng Mực #7A3CFF → #00B3FF. */
+export const shadeTheme = { rim: PAL.shadeRim as string };
+
 // ---------- Bóng Mực: khối mực có viền tím, mắt sáng, xúc tu đung đưa ----------
 export function makeShadeModel(): { group: THREE.Group; animate(t: number, stunned: boolean, spawning: boolean): void } {
   const group = new THREE.Group();
@@ -268,6 +271,10 @@ export function makeShadeModel(): { group: THREE.Group; animate(t: number, stunn
     group,
     animate(t, stunned, spawning) {
       bodyMat.color.set(stunned ? PAL.shadeStunned : PAL.shadeBody);
+      (rim.material as THREE.MeshBasicMaterial).color.set(shadeTheme.rim);
+      pupilMat.color.set(shadeTheme.rim);
+      bodyMat.emissive.set(shadeTheme.rim);
+      (aura.material as THREE.SpriteMaterial).color.set(shadeTheme.rim === PAL.shadeRim ? '#ffffff' : shadeTheme.rim);
       tentacles.forEach((tt, i) => {
         const a = (i / 8) * Math.PI * 2;
         const sway = Math.sin(t * (stunned ? 2 : 5) + i) * (stunned ? 0.1 : 0.35);

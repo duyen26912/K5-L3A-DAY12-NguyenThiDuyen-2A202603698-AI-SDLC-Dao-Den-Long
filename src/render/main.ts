@@ -134,40 +134,59 @@ scene.add(pulseRing);
 let pulseT = 1;
 
 // ---------- Input ----------
-const keys = new Set<string>();
+// Di chuyển: phím mũi tên (WASD dùng thay thế được). Xoay camera: giữ chuột và kéo.
+const keys = new Set<string>(); // phím đang giữ
+const tapped = new Set<string>(); // phím đã nhấn kể từ tick trước (để lần nhấn rất nhanh không bị mất)
 let camYaw = 0;
 let dragging = false;
 let lastX = 0;
 const sfx = new Sfx();
+const GAME_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'KeyQ']);
 window.addEventListener('keydown', (e) => {
   keys.add(e.code);
+  tapped.add(e.code);
   sfx.unlock();
   if (e.code === 'KeyR') restart();
   if (e.code === 'KeyM') sfx.toggle();
-  if (e.code === 'Space') e.preventDefault();
+  if (GAME_KEYS.has(e.code)) e.preventDefault(); // không cuộn trang khi bấm mũi tên/Space
 });
 window.addEventListener('keyup', (e) => keys.delete(e.code));
-window.addEventListener('blur', () => keys.clear());
-renderer.domElement.addEventListener('mousedown', (e) => { dragging = true; lastX = e.clientX; sfx.unlock(); });
+window.addEventListener('blur', () => { keys.clear(); dragging = false; });
+renderer.domElement.addEventListener('mousedown', (e) => {
+  dragging = true;
+  lastX = e.clientX;
+  sfx.unlock();
+  window.focus();
+});
 window.addEventListener('mouseup', () => (dragging = false));
 window.addEventListener('mousemove', (e) => {
   if (!dragging) return;
-  camYaw -= (e.clientX - lastX) * 0.3;
+  camYaw -= (e.clientX - lastX) * 0.3; // kéo sang phải → quay nhìn sang phải
   lastX = e.clientX;
 });
+renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+
+const down = (...codes: string[]) => codes.some((c) => keys.has(c) || tapped.has(c));
 
 function readInput(): InputState {
   // Ánh xạ sang Test Contract: move [x, z] trong hệ camera; z = tiến. Màn hình phải = x âm (xem README).
-  const z = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0);
-  const x = (keys.has('KeyA') ? 1 : 0) - (keys.has('KeyD') ? 1 : 0);
+  const z = (down('ArrowUp', 'KeyW') ? 1 : 0) - (down('ArrowDown', 'KeyS') ? 1 : 0);
+  const x = (down('ArrowLeft', 'KeyA') ? 1 : 0) - (down('ArrowRight', 'KeyD') ? 1 : 0);
   return {
     move: [x, z],
     camYawDeg: camYaw,
-    jump: keys.has('Space'),
-    interact: keys.has('KeyE'),
-    pulse: keys.has('KeyQ'),
+    jump: down('Space'),
+    interact: down('KeyE'),
+    pulse: down('KeyQ'),
     dash: false,
   };
+}
+
+/** Input cho một tick mô phỏng; sau đó xóa các lần nhấn nhanh đã được tính. */
+function consumeInput(): InputState {
+  const inp = readInput();
+  tapped.clear();
+  return inp;
 }
 
 // ---------- Game loop ----------
@@ -218,11 +237,9 @@ let last = performance.now();
 function frame(now: number) {
   const dtReal = Math.min(0.1, (now - last) / 1000);
   last = now;
-  if (keys.has('ArrowLeft')) camYaw += 90 * dtReal;
-  if (keys.has('ArrowRight')) camYaw -= 90 * dtReal;
   acc += dtReal;
   while (acc >= DT) {
-    onEvents(step(world, readInput()));
+    onEvents(step(world, consumeInput()));
     acc -= DT;
   }
   draw(now / 1000);

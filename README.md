@@ -27,8 +27,8 @@ Trình duyệt mở `http://localhost:4173`. Có thể chọn seed cố định:
 
 | Phím | Hành động |
 |---|---|
-| W A S D | Đi (theo hướng camera) |
-| Kéo chuột / ← → | Xoay camera |
+| ↑ ↓ ← → (hoặc W A S D) | Đi tới / lùi / sang trái / sang phải (theo hướng camera) |
+| Giữ chuột trái và kéo | Xoay camera |
 | Space | Nhảy |
 | E | Nạp đom đóm vào đèn gần (trong 3 m) |
 | Q | Tỏa sáng: tốn 1 đom đóm, làm choáng và đẩy lùi Bóng Mực trong 6 m |

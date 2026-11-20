@@ -13,6 +13,7 @@ Công cụ: **Claude Code** (desktop app, model Claude Opus 5.5). Harness: `AGEN
 | Linux | Chạy trong Docker `node:20` | Test CLI gọi `node node_modules/esbuild/bin/esbuild` — trên Windows đó là file JS nhưng trên Linux là binary → 5 test đỏ chỉ trên Linux | Đổi sang esbuild JS API (`buildSync`). Bài học: luôn chạy thử trên Linux trước khi tag |
 | Bằng chứng | Bot chơi trên core để sinh file inputs thắng trọn đêm; script `verify` sinh bảng kết quả | — | — |
 | Giao diện | Three.js scene, HUD, âm thanh WebAudio | Không chơi tay được trọn đêm vì khung trình duyệt của công cụ bị ẩn (requestAnimationFrame dừng) | Ghi "đạt một phần" trong bằng chứng, cần chơi tay trước khi quay video |
+| Chơi thử (người dùng) | Người dùng báo "không di chuyển để nhặt đom đóm được" | Tái hiện bằng phím thật: input chỉ đọc phím **đang giữ** tại mỗi tick 1/60 s → lần nhấn nhanh hơn 1 tick (kể cả E/Q/Space) bị mất. Test core không bắt được vì lỗi nằm ở lớp nhập phím của giao diện | Thêm bộ nhớ "đã nhấn kể từ tick trước"; theo yêu cầu người dùng đổi điều khiển: mũi tên ↑↓←→ để đi (WASD vẫn dùng được), giữ chuột kéo để xoay camera; chặn cuộn trang khi bấm mũi tên. Kiểm tra lại bằng phím thật trong trình duyệt |
 
 ### Token / chi phí (ước tính)
 - Phiên Claude Code Phase 1 (gồm cả đọc tài liệu, CP0, viết code, test, Docker, tài liệu): ước tính **khoảng 1,5–2,5 triệu token đầu vào (phần lớn là cache đọc lại ngữ cảnh) và khoảng 60–80 nghìn token đầu ra**. Đây là ước tính thủ công, không đo bằng công cụ; số chính xác xem trang usage của tài khoản.

@@ -4,6 +4,7 @@ import { createWorld, step, World, InputState, GameEvent, timeLeft } from '../co
 import { TUNING, DT, ISLAND_RADIUS } from '../core/config';
 import { Sfx } from './sfx';
 import { makeLanternModel, LanternModel, LANTERN_TOP_Y } from './lantern';
+import { addBushes } from './bushes';
 
 // ---------- Renderer / scene ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -42,16 +43,12 @@ const clouds = new THREE.Mesh(new THREE.CircleGeometry(220, 48), new THREE.MeshS
 clouds.rotation.x = -Math.PI / 2;
 clouds.position.y = -3;
 scene.add(clouds);
-// vài bụi cây trang trí (cố định, không ảnh hưởng gameplay)
-const bushMat = new THREE.MeshStandardMaterial({ color: '#2f3f2c' });
-for (let i = 0; i < 40; i++) {
+// bụi cỏ lá trang trí nhỏ / vừa / to (cố định, không ảnh hưởng gameplay)
+addBushes(scene, Array.from({ length: 40 }, (_, i) => {
   const a = i * 2.39996;
   const r = 8 + ((i * 37) % 29);
-  const b = new THREE.Mesh(new THREE.SphereGeometry(0.6 + (i % 3) * 0.3, 8, 6), bushMat);
-  b.position.set(Math.sin(a) * r, 0.3, Math.cos(a) * r);
-  b.castShadow = true;
-  scene.add(b);
-}
+  return { x: Math.sin(a) * r, z: Math.cos(a) * r };
+}));
 
 // ---------- Nhân vật Mây ----------
 function makePlayer() {

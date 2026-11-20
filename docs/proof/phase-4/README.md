@@ -22,6 +22,7 @@ node scripts/bench.mjs --seed 42 --duration 30 --out bench.json
 | `*.jsonl` | Output headless thật của từng scenario |
 | [linux-docker.log](linux-docker.log) | Linux (Docker `node:20`): build, **83/83 test**, **27/27 scenario**, 26/26 giống phase-3, soak ×1.04 (3 lần), export, sha256 output trùng Windows |
 | [leaderboard-export.json](leaderboard-export.json) | Kết quả `node scripts/run.mjs --export-leaderboard` sau khi chụp ảnh ui-3, ui-4 (dữ liệu thử ở thư mục tạm, đã xóa) |
+| [ui-0](ui-0-menu-chinh.jpg) | Menu chính (ảnh đầu README) |
 | ui-1 … ui-6 | Ảnh 1280×720 chụp bằng Chromium headless (Playwright) từ bản build |
 
 ## Kết quả đo

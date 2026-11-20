@@ -1,11 +1,15 @@
-# Đảo Đèn Lồng
+# Đảo Đèn Lồng - Day 12 AI SDLC 
 
-> Day 12 AI SDLC · Nguyễn Thị Duyên · 2A202603698 · Tài liệu lab: [docs/lab/](docs/lab/README.md)
-> **Bản phát hành:** [v1.0.0](https://github.com/duyen26912/K5-L3A-DAY12-NguyenThiDuyen-2A202603698-AI-SDLC-Dao-Den-Long/releases/tag/v1.0.0) · **Video demo:** đính kèm Release v1.0.0 (`demo.mp4`)
+> Họ và tên: Nguyễn Thị Duyên \
+> MSSV: 2A202603698 \
+> Tài liệu lab: [docs/lab/](docs/lab/README.md) \
+> **Bản phát hành:** [v1.0.0](https://github.com/duyen26912/K5-L3A-DAY12-NguyenThiDuyen-2A202603698-AI-SDLC-Dao-Den-Long/releases/tag/v1.0.0) \
+> **Video demo:** đính kèm Release v1.0.0 (`demo.mp4`)
 
 Game 3D góc nhìn thứ ba qua **3 Đêm**: Đảo Bến, Đảo Cau, Đảo Chuông. Bạn là **Mây**, người giữ đèn nhỏ tuổi, nhặt đom đóm, mang về thắp lại các **Đèn Lồng Lớn**, né **Bóng Mực** và **Gió Lạc** trong sương đen. Đèn hết dầu sẽ tắt — phải châm dầu và **giữ đủ đèn sáng tới bình minh** (≥ 60% số đèn) mới thắng Đêm; hết Ngọn Lửa là thua. Thắng cả 3 Đêm để thấy Bình Minh, rồi ghi tên lên **bảng xếp hạng**.
 
-![Đêm 3 – Đảo Chuông: HUD, phụ đề cảnh báo và mũi tên chỉ Bóng Mực](docs/proof/phase-4/ui-1-hud-phu-de.jpg)
+![Giao diện ban đầu](docs/proof/phase-4/ui-0-menu-chinh.jpg)
+
 
 **Stack:** TypeScript · [Three.js](https://threejs.org) r187 (WebGL2, chạy trên trình duyệt) · Node.js cho build, server, headless, soak · Playwright cho benchmark.
 
@@ -23,7 +27,8 @@ Game 3D góc nhìn thứ ba qua **3 Đêm**: Đảo Bến, Đảo Cau, Đảo Ch
 ## Cài đặt và chạy (3 lệnh)
 
 ```bash
-git clone https://github.com/duyen26912/K5-L3A-DAY12-NguyenThiDuyen-2A202603698-AI-SDLC-Dao-Den-Long.git && cd K5-L3A-DAY12-NguyenThiDuyen-2A202603698-AI-SDLC-Dao-Den-Long
+git clone https://github.com/duyen26912/K5-L3A-DAY12-NguyenThiDuyen-2A202603698-AI-SDLC-Dao-Den-Long.git && 
+cd K5-L3A-DAY12-NguyenThiDuyen-2A202603698-AI-SDLC-Dao-Den-Long
 ```
 
 ```bash

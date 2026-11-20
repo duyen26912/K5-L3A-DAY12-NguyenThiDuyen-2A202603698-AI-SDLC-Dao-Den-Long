@@ -7,3 +7,6 @@ dist-headless/
 out/
 *.log
 !docs/proof/**/*.log
+
+# video demo nặng (> 100 MB) — tải lên YouTube/Drive, link trong README
+docs/demo/*.mp4

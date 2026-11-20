@@ -1,12 +1,13 @@
 // Chạy các scenario headless bằng đúng lệnh trong game.contract.json, kiểm tra kết quả mong đợi,
 // kiểm tra tính tất định (chạy 2 lần so sánh) và lưu bằng chứng vào docs/proof/<phase>/.
-// Chạy: npm run build:headless && npm run verify [-- phase-3]
+// Chạy: npm run build && npm run verify [-- phase-4]
+// Phase 4: thêm so sánh đầu ra với bằng chứng phase-3 (headless không đổi), soak_cmd và lệnh xuất bảng xếp hạng.
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, existsSync, mkdtempSync } from 'node:fs';
 import { join } from 'node:path';
 import os from 'node:os';
 
-const phase = process.argv[2] ?? 'phase-3';
+const phase = process.argv[2] ?? 'phase-4';
 const outDir = join('docs', 'proof', phase);
 mkdirSync(outDir, { recursive: true });
 const contract = JSON.parse(readFileSync('game.contract.json', 'utf8'));
@@ -185,6 +186,13 @@ const cases = [
     check: (l) => at(l, 1).player.capacity === 12 && at(l, 1).player.carried === 12,
     expect: 'capacity 12, mang 12',
   },
+  // ---- Phase 4: ổn định khi chạy lâu (luật không đổi) ----
+  {
+    name: 'p4-stress', req: 'Đêm 3 trọn 300 s với 60 Bóng Mực + gió + sinh ngẫu nhiên, Mây bất tử: không lỗi, kết thúc đúng ở bình minh',
+    args: ['--night', '3', '--seed', '4', ...sc('p4-stress'), '--ticks', '18100', '--snapshot-every', '600'],
+    check: (l) => end(l).ticks === 18000 && ev(l, 'game_over')[0]?.data.reason === 'dawn' && ev(l, 'player_hit').length >= 100 && snaps(l).length === 31,
+    expect: 'end tại tick 18000, lost/dawn, ≥ 100 player_hit, 31 snapshot',
+  },
 ];
 
 writeFileSync(`${SC}/p2-immortal.scenario.json`, JSON.stringify({ player: { flames: 99 } }) + '\n');
@@ -219,6 +227,62 @@ for (const c of cases) {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${c.name}  (${detail}; tất định=${same}; ${r1.ms.toFixed(0)} ms)`);
 }
 
+// ---- Phase 4: headless không đổi so với bằng chứng phase-3 ----
+const baseDir = join('docs', 'proof', 'phase-3');
+const same3 = [];
+if (phase !== 'phase-3') {
+  for (const r of rows) {
+    const base = join(baseDir, `${r.name}.jsonl`);
+    if (!existsSync(base)) continue;
+    const ok = readFileSync(base, 'utf8') === readFileSync(join(outDir, `${r.name}.jsonl`), 'utf8');
+    same3.push({ name: r.name, ok });
+    allOk &&= ok;
+  }
+  console.log(`Headless so với phase-3: ${same3.filter((x) => x.ok).length}/${same3.length} file giống hệt`);
+}
+
+// ---- Phase 4: soak_cmd và lệnh xuất bảng xếp hạng ----
+const extra = [];
+if (phase !== 'phase-3' && contract.soak_cmd) {
+  const [scmd, ...sargs] = contract.soak_cmd.split(' ');
+  const sout = join(os.tmpdir(), 'ddl-verify-soak.json');
+  const t0 = Date.now();
+  const r = spawnSync(scmd === 'node' ? process.execPath : scmd, [...sargs, '--seed', '7', '--nights', '10', '--out', sout], { encoding: 'utf8' });
+  let ok = r.status === 0;
+  let detail = `exit ${r.status}`;
+  if (ok) {
+    const s = JSON.parse(readFileSync(sout, 'utf8'));
+    ok = s.nights === 10 && s.crashes === 0 && s.mem_end_mb <= 1.2 * s.mem_start_mb;
+    detail = `crashes=${s.crashes}, mem ${s.mem_start_mb} → ${s.mem_end_mb} MB (×${(s.mem_end_mb / s.mem_start_mb).toFixed(3)}), results=${s.results.join(',')}`;
+  }
+  extra.push({ name: 'soak', cmd: `${contract.soak_cmd} --seed 7 --nights 10 --out soak.json`, expect: 'crashes = 0, mem_end ≤ 1.2 × mem_start', detail, ok, ms: Date.now() - t0 });
+  allOk &&= ok;
+}
+if (phase !== 'phase-3' && existsSync(join('dist-headless', 'leaderboard.mjs'))) {
+  const dir = mkdtempSync(join(os.tmpdir(), 'ddl-verify-lb-'));
+  const env = { ...process.env, DDL_DATA_DIR: dir };
+  const store = await import(new URL('../dist-headless/leaderboard.mjs', import.meta.url));
+  const file = join(dir, 'leaderboard.json');
+  store.submitEntry({ name: 'Bảo_2', score: 300, nights_won: 1, seed: 11 }, file);
+  await new Promise((r) => setTimeout(r, 1100)); // khác giây → thứ tự đạt trước/sau rõ ràng
+  store.submitEntry({ name: 'An_1', score: 900, nights_won: 3, seed: 10 }, file);
+  store.submitEntry({ name: 'Chi_3', score: 300, nights_won: 1, seed: 12 }, file);
+  const out = join(dir, 'out.json');
+  const [rcmd, ...rargs] = contract.run_cmd.split(' ');
+  const t0 = Date.now();
+  const r = spawnSync(rcmd === 'node' ? process.execPath : rcmd, [...rargs, '--export-leaderboard', out], { encoding: 'utf8', env });
+  let ok = r.status === 0;
+  let detail = `exit ${r.status}`;
+  if (ok) {
+    const names = JSON.parse(readFileSync(out, 'utf8')).entries.map((e) => e.name).join(', ');
+    ok = names === 'An_1, Bảo_2, Chi_3';
+    detail = `entries: ${names}`;
+  }
+  extra.push({ name: 'export-leaderboard', cmd: `${contract.run_cmd} --export-leaderboard out.json`, expect: 'An_1 (900) → Bảo_2 (300, đạt trước) → Chi_3 (300, đạt sau)', detail, ok, ms: Date.now() - t0 });
+  allOk &&= ok;
+}
+for (const x of extra) console.log(`${x.ok ? 'PASS' : 'FAIL'}  ${x.name}  (${x.detail})`);
+
 const md = [
   `# Kết quả kiểm chứng headless (${phase})`,
   '',
@@ -234,6 +298,21 @@ const md = [
   '',
   `Tổng: ${rows.filter((r) => r.ok).length}/${rows.length} đạt.`,
   '',
+  ...(same3.length ? [
+    '## Đầu ra headless không đổi so với phase-3',
+    '',
+    `So sánh byte-by-byte file JSONL vừa sinh với \`docs/proof/phase-3/\` (cùng tham số): **${same3.filter((x) => x.ok).length}/${same3.length} giống hệt**.`,
+    ...same3.filter((x) => !x.ok).map((x) => `- KHÁC: ${x.name}`),
+    '',
+  ] : []),
+  ...(extra.length ? [
+    '## Lệnh Phase 4',
+    '',
+    '| Kiểm tra | Lệnh | Mong đợi | Kết quả | Thời gian | Đạt |',
+    '|---|---|---|---|---:|---|',
+    ...extra.map((x) => `| ${x.name} | \`${x.cmd}\` | ${x.expect} | ${x.detail} | ${x.ms} ms | ${x.ok ? 'ĐẠT' : 'CHƯA ĐẠT'} |`),
+    '',
+  ] : []),
 ].join('\n');
 writeFileSync(join(outDir, 'headless-verify.md'), md);
 process.exitCode = allOk ? 0 : 1;

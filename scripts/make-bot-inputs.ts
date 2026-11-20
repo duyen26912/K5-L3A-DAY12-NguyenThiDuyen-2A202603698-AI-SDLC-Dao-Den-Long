@@ -2,7 +2,7 @@
 // Dùng để tạo bằng chứng "chơi được từ đầu tới thắng". Đêm 2: đi vòng qua cầu tre.
 // Chạy: npx tsx scripts/make-bot-inputs.ts <night> <seed> <file-out>
 import { writeFileSync } from 'node:fs';
-import { createWorld, step, InputState, World, Vec3 } from '../src/core/world';
+import { createWorld, step, InputState, World, Vec3, capacity } from '../src/core/world';
 import { TUNING } from '../src/core/config';
 
 const night = Number(process.argv[2] ?? 1);
@@ -27,11 +27,18 @@ function waypoint(from: Vec3, to: Vec3): Vec3 {
 function decide(): InputState {
   const p = w.player;
   const inp: InputState = { move: [0, 0], camYawDeg: 0, jump: false, interact: false, pulse: false, dash: false, pause: false };
-  const unlit = w.lanterns.filter((l) => !l.lit);
-  const target = [...unlit].sort((a, b) => d(p.pos, a.pos) - d(p.pos, b.pos))[0];
-  const need = TUNING.lantern_cost - target.deposited;
+  // Ticket-03: ưu tiên châm dầu đèn sắp cạn, sau đó thắp đèn chưa sáng
+  const litN = w.lanterns.filter((l) => l.lit).length;
+  const need3 = Math.ceil(0.6 * w.lanterns.length);
+  const timeLeftS = w.startTimeLeft - w.simTick / 60;
+  // đèn sẽ tắt trước bình minh thì cần châm; ngưỡng gấp: < 25 dầu
+  const low = w.lanterns.filter((l) => l.lit && l.fuelU / 60 < Math.min(25, timeLeftS + 5));
+  const unlit = w.lanterns.filter((l) => !l.lit).sort((a, b) => Number(b.everLit) - Number(a.everLit));
+  const pool = low.length > 0 ? low : litN < need3 + 1 && unlit.length > 0 ? unlit : w.lanterns.filter((l) => l.lit && l.fuelU / 60 < timeLeftS);
+  const target = [...(pool.length ? pool : w.lanterns)].sort((a, b) => d(p.pos, a.pos) - d(p.pos, b.pos))[0];
+  const need = target.lit ? Math.ceil((6000 - target.fuelU) / 600) : (target.everLit ? TUNING.relight_cost : TUNING.lantern_cost) - target.deposited;
   let goal: Vec3;
-  if (p.carried >= Math.min(need, TUNING.carry_capacity) || (w.motes.length === 0 && p.carried > 0)) {
+  if (p.carried >= Math.min(need, capacity(w)) || (w.motes.length === 0 && p.carried > 0) || (target.lit && p.carried >= 3)) {
     goal = target.pos;
     if (d(p.pos, target.pos) <= TUNING.interact_radius - 0.3) { toggle = !toggle; inp.interact = toggle; }
   } else {

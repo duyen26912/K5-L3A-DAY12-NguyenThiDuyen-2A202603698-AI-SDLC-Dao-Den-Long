@@ -1,12 +1,12 @@
 // Chạy các scenario headless bằng đúng lệnh trong game.contract.json, kiểm tra kết quả mong đợi,
 // kiểm tra tính tất định (chạy 2 lần so sánh) và lưu bằng chứng vào docs/proof/<phase>/.
-// Chạy: npm run build:headless && npm run verify [-- phase-2]
+// Chạy: npm run build:headless && npm run verify [-- phase-3]
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import os from 'node:os';
 
-const phase = process.argv[2] ?? 'phase-2';
+const phase = process.argv[2] ?? 'phase-3';
 const outDir = join('docs', 'proof', phase);
 mkdirSync(outDir, { recursive: true });
 const contract = JSON.parse(readFileSync('game.contract.json', 'utf8'));
@@ -30,10 +30,10 @@ const cases = [
     expect: '1 mote_picked; không pulse (chỉ mang 1 < 3)',
   },
   {
-    name: 'p1-light-last-lantern', req: 'Regression: nạp đèn cuối → thắng (won/all_lit), +10/đom đóm nạp',
+    name: 'p1-light-last-lantern', req: 'Regression (sửa theo Ticket-03): nạp đủ 10 → lantern_lit; thắp đèn cuối KHÔNG còn thắng sớm',
     args: ['--night', '1', '--seed', '1', ...sc('light-last-lantern'), ...inp('light-last-lantern'), '--ticks', '600'],
-    check: (l) => end(l).state === 'won' && ev(l, 'deposit')[0]?.data.amount === 10 && ev(l, 'game_over')[0]?.data.reason === 'all_lit',
-    expect: 'deposit 10, lantern_lit, won/all_lit',
+    check: (l) => ev(l, 'deposit')[0]?.data.amount === 10 && ev(l, 'lantern_lit').length === 1 && ev(l, 'game_over').length === 0,
+    expect: 'deposit 10, lantern_lit, chưa game_over',
   },
   {
     name: 'p1-dawn', req: 'Regression: hết giờ → lost/dawn',
@@ -41,13 +41,7 @@ const cases = [
     check: (l) => end(l).state === 'lost' && ev(l, 'game_over')[0]?.data.reason === 'dawn' && end(l).ticks === 120,
     expect: 'game_over lost/dawn tại tick 120',
   },
-  {
-    name: 'p1-bot-win-n1-seed5', req: 'Chơi trọn Đêm 1 (số chuẩn, ngẫu nhiên theo seed) tới thắng',
-    args: ['--night', '1', '--seed', '5', ...inp('bot-win-n1-seed5'), '--ticks', '21600', '--snapshot-every', '120'],
-    check: (l) => end(l).state === 'won' && ev(l, 'lantern_lit').length === 5,
-    expect: '5 lantern_lit, thắng',
-  },
-  // ---- Tính năng mới Phase 2 ----
+  // ---- Tính năng Phase 2 (regression) ----
   {
     name: 'p2-dash', req: 'Lướt 14 m/s × 0.2 s, hồi chiêu 1.5 s (lần nhấn tick 30 bị bỏ qua)',
     args: ['--night', '1', '--seed', '1', '--scenario', E, ...inp('p2-dash'), '--ticks', '120', '--snapshot-every', '1'],
@@ -135,6 +129,61 @@ const cases = [
     args: ['--night', '3', '--seed', '42', '--scenario', `${SC}/p2-immortal.scenario.json`, '--ticks', '21600', '--snapshot-every', '600'],
     check: (l) => end(l).type === 'end' && ev(l, 'shade_spawned').length === 10,
     expect: '10 shade_spawned (tối đa Đêm 3)',
+  },
+  // ---- Tính năng mới Phase 3 (Ticket-03) ----
+  {
+    name: 'p3-fuel-out', req: 'Dầu hao 1/giây; hết dầu → lantern_out, đèn tắt, deposited 0, nhớ ever_lit',
+    args: ['--night', '1', '--seed', '1', ...sc('p3-fuel-out'), '--ticks', '90', '--snapshot-every', '1'],
+    check: (l) => ev(l, 'lantern_out')[0]?.tick === 60 && at(l, 60).lanterns[0].lit === false && at(l, 60).lanterns[0].ever_lit === true && at(l, 60).lanterns[0].fuel === 0,
+    expect: 'lantern_out L1 tại tick 60, fuel 0, ever_lit true',
+  },
+  {
+    name: 'p3-refuel', req: 'Châm dầu: used = min(mang, ceil((100−fuel)/10)), fuel tối đa 100, +5/đom đóm',
+    args: ['--night', '1', '--seed', '1', ...sc('p3-refuel'), ...inp('p2-interact'), '--ticks', '5', '--snapshot-every', '1'],
+    check: (l) => JSON.stringify(ev(l, 'refuel')[0]?.data) === '{"lantern_id":"L1","amount":6,"fuel":100}' && at(l, 1).score === 30,
+    expect: 'refuel amount 6 → fuel 100, điểm 30',
+  },
+  {
+    name: 'p3-relight', req: 'Thắp lại đèn đã từng sáng: chỉ cần 5, +40, relight: true, relit_count 1',
+    args: ['--night', '1', '--seed', '1', ...sc('p3-relight'), ...inp('p2-interact'), '--ticks', '5', '--snapshot-every', '1'],
+    check: (l) => ev(l, 'lantern_lit')[0]?.data.relight === true && ev(l, 'deposit')[0]?.data.amount === 5 && at(l, 1).lanterns[0].relit_count === 1 && at(l, 1).score === 65,
+    expect: 'deposit 5, lantern_lit relight, điểm 25 + 40',
+  },
+  {
+    name: 'p3-drain', req: 'Bóng Mực wander tới đèn fuel < 30, drain 5/giây cộng dồn, fuel_drain mỗi 60 tick, đèn tắt thì bỏ drain',
+    args: ['--night', '1', '--seed', '1', ...sc('p3-drain'), '--ticks', '400', '--snapshot-every', '10'],
+    check: (l) => snaps(l).some((s) => s.shades.every((x) => x.state === 'drain')) && ev(l, 'fuel_drain').length >= 2 && ev(l, 'lantern_out')[0]?.data.lantern_id === 'L1',
+    expect: '2 Bóng Mực drain, ≥ 2 fuel_drain, L1 tắt',
+  },
+  {
+    name: 'p3-drain-pulse', req: 'Tỏa Sáng trúng Bóng Mực đang drain → stunned, +15',
+    args: ['--night', '1', '--seed', '1', ...sc('p3-drain-pulse'), ...inp('p2-pulse-once'), '--ticks', '5', '--snapshot-every', '1'],
+    check: (l) => at(l, 1).shades[0].state === 'stunned' && at(l, 1).score === 15,
+    expect: 'stunned, điểm 15',
+  },
+  {
+    name: 'p3-no-early-win', req: 'Thắp đủ 5/5 đèn không kết thúc Đêm',
+    args: ['--night', '1', '--seed', '1', ...sc('p3-no-early-win'), ...inp('p2-interact'), '--ticks', '120'],
+    check: (l) => ev(l, 'lantern_lit').length === 1 && ev(l, 'game_over').length === 0 && end(l).state === 'playing',
+    expect: 'lantern_lit, không game_over',
+  },
+  {
+    name: 'p3-dawn-win', req: 'Bình minh: còn sống + 3/5 đèn sáng → won/dawn_survived, thưởng 50+floor(fuel)/đèn + 50/Ngọn Lửa',
+    args: ['--night', '1', '--seed', '1', ...sc('p3-dawn-win'), '--ticks', '1000'],
+    check: (l) => ev(l, 'game_over')[0]?.data.reason === 'dawn_survived' && end(l).score === 3 * (50 + 98) + 150,
+    expect: 'won/dawn_survived, điểm 594',
+  },
+  {
+    name: 'p3-dawn-lose', req: 'Bình minh mà chỉ 2/5 đèn sáng → lost/dawn',
+    args: ['--night', '1', '--seed', '1', ...sc('p3-dawn-lose'), '--ticks', '1000'],
+    check: (l) => ev(l, 'game_over')[0]?.data.reason === 'dawn' && end(l).state === 'lost',
+    expect: 'lost/dawn',
+  },
+  {
+    name: 'p3-capacity', req: 'Sức chứa = 10 + 2 × successful_lights (1 lần thắp → 12)',
+    args: ['--night', '1', '--seed', '1', ...sc('p3-capacity'), '--ticks', '2', '--snapshot-every', '1'],
+    check: (l) => at(l, 1).player.capacity === 12 && at(l, 1).player.carried === 12,
+    expect: 'capacity 12, mang 12',
   },
 ];
 

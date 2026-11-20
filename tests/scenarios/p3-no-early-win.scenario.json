@@ -1,0 +1,1 @@
+{ "random_motes": false, "random_shades": false, "random_drifters": false, "wind_enabled": false, "motes": [], "shades": [], "drifters": [], "charms": [], "player": { "pos": [-23.8, 0, 9.2], "carried": 10 }, "lanterns": [ { "id": "L1", "lit": true }, { "id": "L2", "lit": true }, { "id": "L3", "lit": true }, { "id": "L4", "lit": true } ] }

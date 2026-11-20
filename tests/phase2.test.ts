@@ -74,10 +74,10 @@ test('Rơi khi còn 1 Ngọn Lửa → thua ngay, không hồi sinh', () => {
 });
 
 // ---------- Đêm 2 ----------
-test('Đêm 2: bản đồ chuẩn (6 đèn, Bùa C1 trên cầu, 330 s)', () => {
+test('Đêm 2: bản đồ chuẩn (6 đèn, Bùa C1 trên cầu, 270 s — Phase 3)', () => {
   const s0 = run({ seed: 1, night: 2, ticks: 0 })[0];
   assert.equal(s0.night, 2);
-  assert.equal(s0.time_left_s, 330);
+  assert.equal(s0.time_left_s, 270);
   assert.deepEqual(s0.lanterns.map((l: Line) => l.pos), [[0, 0, 20], [17, 0, -10], [-17, 0, -10], [70, 0, 20], [87, 0, -10], [53, 0, -10]]);
   assert.deepEqual(s0.charms, [{ id: 'C1', available: true, respawn_s: 0 }]);
 });
@@ -104,9 +104,9 @@ test('Đêm 2: bục nhảy (20,0,18) bắn lên 14 m/s, ngang 24 m/s về tâm 
 });
 
 // ---------- Đêm 3 ----------
-test('Đêm 3: bản đồ chuẩn (7 đèn trên các tầng, 2 bùa, 360 s, 30 điểm đom đóm)', () => {
+test('Đêm 3: bản đồ chuẩn (7 đèn trên các tầng, 2 bùa, 300 s — Phase 3, 30 điểm đom đóm)', () => {
   const s0 = run({ seed: 1, night: 3, ticks: 0 })[0];
-  assert.equal(s0.time_left_s, 360);
+  assert.equal(s0.time_left_s, 300);
   assert.deepEqual(s0.lanterns[0].pos, [0, 6, 6]);
   assert.equal(s0.lanterns.length, 7);
   assert.equal(s0.charms.length, 2);

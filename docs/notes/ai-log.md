@@ -41,6 +41,7 @@ Công cụ: **Claude Code** (desktop app, model Claude Opus 5.5). Harness: `AGEN
 | Nón lá + bảng điều khiển (người dùng) | Đổi mũ thành nón lá, xóa đảo núi, phóng to ngọn lửa, làm đẹp bảng phím | Phím mũi tên bị xuống dòng rồi đè chữ — phát hiện qua ảnh chụp | Nới cột phím; bảng dạng ô phím (`kbd`), H để ẩn/hiện. Chỉ hiển thị, output headless không đổi |
 | Đuốc + Bóng Mực + bảng phím (người dùng) | Bảng điều khiển chỉ để ký hiệu; Bóng Mực sáng hơn; đuốc bị nón lá che | Đầu gậy nằm trong vành nón (bán kính 0.78 m) — lỗi đặt vị trí khi đổi mũ sang nón lá | Gậy dài hơn, nghiêng ra ngoài, lửa ở cao 2.4 m ngoài vành nón; Bóng Mực giữ thân `#120A1A`, sáng nhờ phát quang/viền/quầng tím `#7A3CFF`. Chỉ hiển thị, output headless không đổi |
 | Cây (người dùng) | Không ẩn cây khi đi ngang qua | Người chơi thấy cây biến mất là lạ | Bỏ cơ chế ẩn cây; cây vẫn không có va chạm (đi xuyên qua được) |
+| Rà soát trước khi nộp | Kiểm tra file sẽ đẩy lên | `.gitignore` có `*.log` nên `docs/proof/phase-1/linux-docker.log` **chưa từng được đẩy** ở tag `phase-1` (README bằng chứng Phase 1 có link tới) | Thêm `!docs/proof/**/*.log`; log Linux Phase 1 được bổ sung vào repo ở commit Phase 2 (nội dung tạo lúc làm Phase 1, không sửa). Tag `phase-1` không gắn lại |
 
 ### Token / chi phí Phase 2 (ước tính)
 - Ước tính **khoảng 2–3 triệu token đầu vào (phần lớn là cache ngữ cảnh) và khoảng 90–120 nghìn token đầu ra**. Ước tính thủ công, không đo bằng công cụ.

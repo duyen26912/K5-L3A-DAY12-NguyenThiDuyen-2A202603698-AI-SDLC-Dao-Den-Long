@@ -1,5 +1,5 @@
 // Chế độ headless theo Test Contract v1.0:
-// <headless_cmd> --seed <int> --night 1 [--scenario <file.json>] [--inputs <file.json>]
+// <headless_cmd> --seed <int> --night <1|2|3> [--scenario <file.json>] [--inputs <file.json>]
 //                --ticks <int> --out <file.jsonl> [--snapshot-every <int, mặc định 10>]
 import { readFileSync, writeFileSync } from 'node:fs';
 import { simulate } from './core/simulate';
@@ -51,7 +51,7 @@ function main(): number {
     for (const k of Object.keys(args)) if (!known.has(k)) throw new UsageError(`tham số không hỗ trợ: --${k}`);
     const seed = intArg(args, 'seed', true, -2147483648);
     const night = intArg(args, 'night', true, 1);
-    if (night !== 1) throw new UsageError('phiên bản này chỉ có --night 1');
+    if (night < 1 || night > 3) throw new UsageError('--night phải là 1, 2 hoặc 3');
     const ticks = intArg(args, 'ticks', true, 0);
     const snapshotEvery = intArg(args, 'snapshot-every', false, 1, 10);
     if (!args.out) throw new UsageError('thiếu --out');

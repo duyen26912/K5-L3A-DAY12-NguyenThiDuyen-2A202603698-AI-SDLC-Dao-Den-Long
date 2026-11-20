@@ -4,7 +4,7 @@ import { NightMap } from '../core/maps';
 import { PAL } from './palette';
 import { addBushes } from './bushes';
 import { makePadModel } from './actors';
-import { makePine, makeBlossom, makeBridge, makePalm } from './decor';
+import { makePine, makeBlossom, makeBridge, makePalm, makeRocks } from './decor';
 
 const grassMat = () => new THREE.MeshStandardMaterial({ color: PAL.grass, roughness: 1 });
 const sandMat = () => new THREE.MeshStandardMaterial({ color: PAL.sand, roughness: 1 });
@@ -32,7 +32,9 @@ function pad(group: THREE.Group, x: number, y: number, z: number, anims: ((t: nu
 
 export interface MapView { group: THREE.Group; update(t: number): void }
 
-export function buildMap(map: NightMap): MapView {
+/** decor = false: tắt cây cối/bụi cây trang trí (cảnh benchmark chuẩn của Ticket-04). */
+export function buildMap(map: NightMap, opts: { decor?: boolean } = {}): MapView {
+  const decor = opts.decor ?? true;
   const g = new THREE.Group();
   // biển mây
   const sea = new THREE.Mesh(new THREE.CircleGeometry(400, 64), new THREE.MeshStandardMaterial({ color: PAL.cloudSea, roughness: 1 }));
@@ -107,14 +109,14 @@ export function buildMap(map: NightMap): MapView {
     const notStart = Math.hypot(map.start[0] - x, map.start[2] - z) > 4;
     if (gr === 0 && edgeOk && notBridge && notPad && notStart && farFromLanterns(x, z)) spots.push({ x, z });
   }
-  addBushes(g, spots);
+  if (decor) addBushes(g, spots);
 
   // cây thông và cây hoa anh đào: gần mép đảo, tránh đèn, điểm sinh đom đóm, bục nhảy, cầu, điểm xuất phát
   const islands: [number, number, number][] = map.night === 1 ? [[0, 0, 40]] : map.night === 2 ? [[0, 0, 28], [70, 0, 28]] : [[0, 0, 45]];
   const clearOf = (x: number, z: number, pts: number[][], d: number) => pts.every((p) => Math.hypot(p[0] - x, p[2] - z) > d);
   let ti = 0;
   const trees: THREE.Group[] = [];
-  for (const [cx, cz, R] of islands) {
+  for (const [cx, cz, R] of decor ? islands : []) {
     const count = Math.round(R / 3.2);
     for (let k = 0; k < count * 3 && ti < 60; k++) {
       const a = k * 2.39996 + cx;
@@ -138,6 +140,29 @@ export function buildMap(map: NightMap): MapView {
     }
   }
 
+  // cụm đá: vòng giữa đảo (khoảng 0.4–0.62 bán kính), cùng điều kiện tránh như cây
+  let ri = 0;
+  for (const [cx, cz, R] of decor ? islands : []) {
+    const want = Math.max(4, Math.round(R / 5));
+    let placed = 0;
+    for (let k = 0; k < 120 && placed < want; k++) {
+      const a = k * 2.39996 + 0.9 + cx;
+      const r = R * (0.4 + ((k * 7) % 11) / 11 * 0.22);
+      const x = cx + Math.cos(a) * r;
+      const z = cz + Math.sin(a) * r;
+      const ok = map.ground(x, z) === 0
+        && [[2.2, 0], [-2.2, 0], [0, 2.2], [0, -2.2]].every(([dx, dz]) => map.ground(x + dx, z + dz) === 0)
+        && clearOf(x, z, lanternXZ, 6) && clearOf(x, z, map.motePoints, 2.8) && clearOf(x, z, map.pads.map((p) => p.pos), 4.5)
+        && clearOf(x, z, map.charms, 3.5) && Math.hypot(map.start[0] - x, map.start[2] - z) > 7 && !(x > 22 && x < 48 && Math.abs(z) < 5)
+        && trees.every((t) => Math.hypot(t.position.x - x, t.position.z - z) > 3.5);
+      if (!ok) continue;
+      const rock = makeRocks(1.3 + (ri % 3) * 0.3, ri);
+      rock.position.set(x, 0, z);
+      g.add(rock);
+      ri++;
+      placed++;
+    }
+  }
 
   return {
     group: g,

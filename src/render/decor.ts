@@ -230,3 +230,41 @@ export function makePalm(scale = 1): THREE.Group {
   g.scale.setScalar(scale);
   return shadow(g);
 }
+
+// ---------- Cụm đá: khối đá xám bo cạnh (to – vừa – nhỏ) đứng nghiêng, rêu xanh sáng ở chân ----------
+const ROCK_GEO = new RoundedBoxGeometry(1, 1, 1, 2, 0.14);
+const rockMat = mat('#d3cec2', { roughness: 0.95, emissive: '#3a3833', emissiveIntensity: 0.25 });
+const rockMatDark = mat('#b8b3a7', { roughness: 0.95, emissive: '#3a3833', emissiveIntensity: 0.2 });
+const mossMat = mat('#7fcf3a', { roughness: 1, emissive: '#5fa82a', emissiveIntensity: 0.35 });
+const MOSS_GEO = new THREE.SphereGeometry(1, 14, 8);
+
+/** Cụm 4–5 khối đá như ảnh mẫu; variant đổi cách xếp. Không va chạm (đi xuyên qua như cây). */
+export function makeRocks(scale = 1, variant = 0): THREE.Group {
+  const g = new THREE.Group();
+  // [x, z, rộng, cao, sâu, nghiêng x, nghiêng z, xoay y]
+  const blocks: [number, number, number, number, number, number, number, number][] = [
+    [0, 0, 1.6, 2.0, 1.2, -0.05, 0.08, 0.3],
+    [1.25, -0.15, 0.9, 1.55, 0.9, 0.04, -0.14, -0.2],
+    [0.7, 0.55, 0.55, 1.15, 0.5, 0.18, -0.05, 0.5],
+    [1.15, 0.75, 0.75, 0.6, 0.6, 0.05, 0.1, 0.1],
+    [-1.15, 0.35, 0.7, 0.75, 0.65, -0.08, 0.15, -0.4],
+  ];
+  blocks.forEach(([x, z, w, h, d, rx, rz, ry], i) => {
+    if (variant % 2 === 1 && i === 4) return;
+    const m = new THREE.Mesh(ROCK_GEO, i % 2 ? rockMatDark : rockMat);
+    m.scale.set(w, h, d);
+    m.position.set(x - 0.3, h / 2 - 0.08, z);
+    m.rotation.set(rx, ry + variant * 0.7, rz);
+    g.add(m);
+  });
+  // rêu xanh ở chân đá
+  for (const [x, z, r] of [[-0.6, 0.55, 0.75], [0.5, 0.75, 0.6], [1.1, 0.3, 0.55], [-1.3, 0.75, 0.45], [0.2, -0.5, 0.6]] as const) {
+    const m = new THREE.Mesh(MOSS_GEO, mossMat);
+    m.scale.set(r, 0.12, r * 0.8);
+    m.position.set(x - 0.3, 0.02, z);
+    g.add(m);
+  }
+  g.scale.setScalar(scale);
+  g.rotation.y = variant * 1.9;
+  return shadow(g);
+}

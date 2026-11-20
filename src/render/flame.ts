@@ -40,9 +40,9 @@ function glowTexture(): THREE.Texture {
 }
 export const FLAME_GLOW = glowTexture();
 
-const OUTER = flameGeo(1, 0.36, 0.22);
-const SIDE = flameGeo(0.62, 0.2, -0.3);
-const CORE = flameGeo(0.6, 0.24, 0.1);
+export const OUTER = flameGeo(1, 0.36, 0.22);
+export const SIDE = flameGeo(0.62, 0.2, -0.3);
+export const CORE = flameGeo(0.6, 0.24, 0.1);
 
 export interface Flame {
   group: THREE.Group;

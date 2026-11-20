@@ -1,6 +1,6 @@
 # AGENTS.md — Đảo Đèn Lồng
 
-Game 3D (Three.js, chạy trên trình duyệt) + chế độ headless (Node) theo **Test Contract v1.1** (Ticket-02, 3 Đêm). Spec + AC: `docs/notes/spec-phase-2.md`.
+Game 3D (Three.js, chạy trên trình duyệt) + chế độ headless (Node) theo **Test Contract v1.2** (Ticket-02 + Ticket-03 "Đèn cạn dầu", 3 Đêm). Spec: `docs/notes/spec-phase-2.md`, `docs/lab/TICKET-03.md`; quyết định thiết kế: `docs/notes/adr-*.md`.
 
 ## Lệnh
 - Cài: `npm ci` · Build: `npm run build` (headless → `dist-headless/`, web → `dist/`)
@@ -14,13 +14,14 @@ Game 3D (Three.js, chạy trên trình duyệt) + chế độ headless (Node) th
 - Số chuẩn: có khóa tuning → `game.contract.json`; không có khóa → hằng trong `core/config.ts`. Bản đồ chuẩn 3 Đêm → `core/maps.ts`. Không hard-code số ở chỗ khác.
 - Thứ tự một tick (bắt buộc, Ticket-02): pause → bộ đếm → di chuyển Mây (nhảy, lướt, bục, gió) + rơi → nhặt đom đóm/bùa → nạp đèn → vùng an toàn → Tỏa Sáng → Bóng Mực + Gió Lạc → chạm (Gió Lạc trước, Bóng Mực theo id) → sinh theo lịch → thắng/thua → snapshot.
 - Khi đang pause: `tick` tăng, `sim_tick` và mọi bộ đếm đứng yên.
-- Tên trạng thái Bóng Mực đúng v1.1: spawning, wander, chase, recoil, stunned. Gió Lạc: idle, chase, flee, removed.
+- Ticket-03: dầu đèn lưu bằng **đơn vị nguyên 1/60** (`fuelU`), trừ dầu ở bước 2 (hao + hút), đèn `fuel ≤ 0` tắt ngay sau bước 2; vùng an toàn chỉ khi `fuel ≥ 30` (`hasSafeZone`); không thắng sớm — thắng/thua chỉ xét ở bình minh (trừ `no_flames`).
+- Tên trạng thái Bóng Mực đúng v1.2: spawning, wander, chase, recoil, stunned, drain. Gió Lạc: idle, chase, flee, removed.
 - Màu các thành phần chuẩn lấy từ `render/palette.ts`.
 
 ## Quy tắc
 - Bám đúng chữ trong PRD/ticket/Test Contract; chỗ chưa quy định → ghi giả định vào `docs/notes/assumptions.md`, không tự bịa thành "yêu cầu".
 - Chỉ dùng lệnh chạy được trên macOS/Linux (không .bat/.ps1, không đường dẫn `\`). Tên file import đúng hoa/thường.
-- Yêu cầu mới → viết test (`tests/*.test.ts`) **và** ít nhất 1 scenario headless (`tests/scenarios/` + mục trong `scripts/verify.mjs`) trước, rồi code. Test cũ bị luật mới thay → sửa/bỏ kèm lý do trong ghi chú, không tắt âm thầm.
+- Yêu cầu mới → viết test (`tests/*.test.ts`) **và** ít nhất 1 scenario headless (`tests/scenarios/` + mục trong `scripts/verify.mjs`) trước, rồi code. Test cũ bị luật mới thay → sửa/bỏ kèm lý do (ghi chú `Phase N:` ngay tại test + CHANGELOG breaking changes), không skip âm thầm. Thay đổi mô hình lớn → viết ADR trong `docs/notes/`.
 - Không sửa tay output, không viết test luôn đạt. Xong việc phải chạy `npm test` + `npm run verify` và dẫn output làm bằng chứng.
 - Không commit `.env`, key, token.
 - Commit: dạng `feat(phase-N): …`, `fix(phase-N): …`, `test(phase-N): …`, `docs(phase-N): …`; không thêm dòng Co-Authored-By.

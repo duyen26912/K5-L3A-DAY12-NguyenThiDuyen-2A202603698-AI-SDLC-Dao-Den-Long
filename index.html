@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đảo Đèn Lồng</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0a1a; font-family: system-ui, sans-serif; color: #fdf3dc; }
+      canvas { display: block; }
+      #hud { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; gap: 10px; flex-wrap: wrap; pointer-events: none; }
+      .chip { background: rgba(20, 16, 40, 0.72); border: 1px solid rgba(255, 190, 110, 0.35); border-radius: 10px; padding: 6px 12px; font-size: 15px; }
+      .chip b { color: #ffc46b; }
+      #compass { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); width: 46px; height: 46px; pointer-events: none; }
+      #compass svg { width: 100%; height: 100%; filter: drop-shadow(0 0 6px #ffb347); }
+      #hint { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); font-size: 18px; color: #ffd38a; text-shadow: 0 0 8px #000; pointer-events: none; }
+      #help { position: fixed; bottom: 12px; left: 12px; font-size: 13px; opacity: 0.8; pointer-events: none; }
+      #overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(8, 6, 20, 0.6); text-align: center; }
+      #overlay h1 { font-size: 48px; margin: 0 0 8px; color: #ffc46b; }
+      #overlay p { font-size: 20px; margin: 4px; }
+      #hurt { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 120px 40px rgba(120, 40, 200, 0.0); transition: box-shadow 0.3s; }
+    </style>
+  </head>
+  <body>
+    <div id="hud">
+      <div class="chip">Đèn: <b id="h-lit">0/5</b></div>
+      <div class="chip">Máu: <b id="h-flames"></b></div>
+      <div class="chip">Đom đóm: <b id="h-carried">0/5</b></div>
+      <div class="chip">Còn lại: <b id="h-time">300</b>s</div>
+      <div class="chip">Điểm: <b id="h-score">0</b></div>
+      <div class="chip">Tỏa sáng: <b id="h-pulse">sẵn sàng</b></div>
+      <div class="chip">Seed: <b id="h-seed"></b></div>
+    </div>
+    <div id="compass" title="Hướng tới đèn chưa thắp gần nhất">
+      <svg viewBox="0 0 40 40"><path d="M20 3 L30 30 L20 24 L10 30 Z" fill="#ffb347" /></svg>
+    </div>
+    <div id="hint"></div>
+    <div id="help">WASD: đi · Kéo chuột hoặc ←/→: xoay camera · Space: nhảy · E: nạp đèn · Q: tỏa sáng · R: chơi lại · M: tắt/bật âm thanh</div>
+    <div id="hurt"></div>
+    <div id="overlay"><h1 id="o-title"></h1><p id="o-sub"></p><p>Nhấn <b>R</b> để chơi lại</p></div>
+    <script type="module" src="/src/render/main.ts"></script>
+  </body>
+</html>
